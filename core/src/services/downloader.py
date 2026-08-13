@@ -133,8 +133,10 @@ def selected_media_formats(info: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def media_format_size(media_format: dict[str, Any]) -> int:
-    exact_size = int(media_format.get("filesize") or 0)
-    return exact_size if exact_size > 0 else remote_file_size(media_format)
+    reported_size = int(
+        media_format.get("filesize") or media_format.get("filesize_approx") or 0
+    )
+    return reported_size if reported_size > 0 else remote_file_size(media_format)
 
 
 def remote_file_size(media_format: dict[str, Any]) -> int:
