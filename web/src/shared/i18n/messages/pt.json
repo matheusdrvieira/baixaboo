@@ -1,0 +1,468 @@
+{
+  "Metadata": {
+    "title": "Baixar vídeos online e converter mídia | Baixaboo",
+    "description": "Baixe vídeos e playlists online em até Full HD, extraia áudio e converta arquivos para MP4, MP3, WebM e outros formatos, direto no navegador.",
+    "copyrightTitle": "Direitos Autorais e DMCA",
+    "copyrightDescription": "Diretrizes de uso responsável da Baixaboo e como enviar uma notificação de violação de direitos autorais.",
+    "privacyTitle": "Política de Privacidade",
+    "privacyDescription": "Como a Baixaboo trata dados, links enviados, preferências locais e direitos do titular sob a LGPD.",
+    "termsTitle": "Termos de Uso",
+    "termsDescription": "Condições de uso da Baixaboo, responsabilidades do usuário, usos proibidos e limitações de responsabilidade.",
+    "languageTag": "pt-BR",
+    "openGraphLocale": "pt_BR",
+    "alternateOpenGraphLocale": "en_US",
+    "currency": "BRL",
+    "homeLabel": "Início",
+    "structuredData": {
+      "description": "Ferramenta online para baixar vídeos e playlists em até Full HD, extrair áudio e converter arquivos de mídia diretamente no navegador.",
+      "pageTitle": "Baixar vídeos online em Full HD | Baixaboo",
+      "features": {
+        "videoDownload": "Download de vídeos em até Full HD",
+        "playlistDownload": "Download de playlists",
+        "audioExtraction": "Extração de áudio",
+        "mediaConversion": "Conversão de áudio e vídeo"
+      }
+    },
+    "socialImage": {
+      "title": "Baixe vídeos, extraia áudio e converta arquivos",
+      "description": "Ferramentas de mídia online, simples e diretas."
+    }
+  },
+  "Common": {
+    "video": "Vídeo",
+    "audio": "Áudio",
+    "cancel": "Cancelar"
+  },
+  "Header": {
+    "homeLabel": "Baixaboo — página inicial",
+    "primaryNavigation": "Navegação principal",
+    "mobileNavigation": "Navegação móvel",
+    "language": "Idioma",
+    "toggleTheme": "Alternar tema",
+    "lightTheme": "Ativar tema claro",
+    "darkTheme": "Ativar tema escuro",
+    "openMenu": "Abrir menu",
+    "nav": {
+      "home": "Início",
+      "howItWorks": "Como funciona",
+      "formats": "Formatos",
+      "platforms": "Plataformas compatíveis",
+      "faq": "Perguntas frequentes"
+    }
+  },
+  "Logo": {
+    "slogan": "Converta. Escolha. Baixe."
+  },
+  "Footer": {
+    "description": "Baixaboo é uma ferramenta online para encaminhar downloads de conteúdos próprios, licenciados ou autorizados, sem manter arquivos no servidor.",
+    "linksLabel": "Links do rodapé",
+    "independent": "Baixaboo é uma ferramenta independente e não possui vínculo, parceria, patrocínio ou aprovação do YouTube, Google ou das demais plataformas compatíveis.",
+    "legalIdentity": "[RAZÃO SOCIAL OU RESPONSÁVEL] · [CNPJ OU IDENTIFICAÇÃO]",
+    "links": {
+      "home": "Início",
+      "formats": "Formatos",
+      "howItWorks": "Como funciona",
+      "terms": "Termos de Uso",
+      "privacy": "Política de Privacidade",
+      "copyright": "Diretrizes de Direitos Autorais",
+      "removal": "Solicitação de remoção",
+      "contact": "Contato",
+      "status": "Status do serviço"
+    }
+  },
+  "LegalShell": {
+    "eyebrow": "LEGAL E TRANSPARÊNCIA",
+    "lastUpdated": "Última atualização: {date}",
+    "back": "Voltar para as ferramentas",
+    "language": "Mudar para inglês",
+    "theme": "Alternar tema",
+    "homeLabel": "Baixaboo — página inicial",
+    "legalLinksLabel": "Links legais",
+    "terms": "Termos",
+    "privacy": "Privacidade",
+    "copyright": "Direitos Autorais"
+  },
+  "Home": {
+    "Hero": {
+      "eyebrow": "Converta. Escolha. Baixe.",
+      "title": "Baixe mídias diretamente",
+      "highlight": "com liberdade e responsabilidade",
+      "description": "A Baixaboo analisa links públicos compatíveis e transmite vídeo ou áudio para o seu navegador, sem salvar cópias — desde que você tenha direito ou autorização sobre o conteúdo.",
+      "pills": {
+        "immediate": "Download imediato",
+        "original": "Formato original",
+        "responsible": "Uso responsável"
+      }
+    },
+    "Converter": {
+      "label": "Link da mídia",
+      "placeholder": "Cole aqui o link da mídia autorizada",
+      "paste": "Colar da área de transferência",
+      "pasteError": "Não foi possível acessar a área de transferência.",
+      "sourceIdentified": "Fonte identificada: {source}",
+      "helper": "Aceitamos links públicos compatíveis e links diretos de áudio ou vídeo.",
+      "consent": "Confirmo que sou proprietário do conteúdo ou possuo autorização, licença ou base legal para realizar este download.",
+      "analyzing": "Analisando mídia",
+      "analyze": "Analisar mídia",
+      "agreementBefore": "Ao continuar, você concorda com os",
+      "terms": "Termos de Uso",
+      "agreementAfter": "e reconhece sua responsabilidade pelo conteúdo baixado.",
+      "retry": "Tentar novamente",
+      "downloadStarted": "Download iniciado. O arquivo é transmitido diretamente pela fonte.",
+      "videoSummary": "Arquivo de vídeo original · download por streaming, sem conversão ou armazenamento.",
+      "audioSummary": "Arquivo de áudio original · download por streaming, sem conversão ou armazenamento.",
+      "validation": {
+        "required": "Informe um link.",
+        "invalid": "Link inválido. Use um endereço completo com https://",
+        "protocol": "Apenas links http:// ou https:// são aceitos.",
+        "internal": "Endereços internos não são permitidos.",
+        "privateIp": "Endereços IP privados não são permitidos.",
+        "domain": "Domínio inválido."
+      },
+      "errors": {
+        "invalid_url": {
+          "title": "Link inválido",
+          "description": "Verifique se o endereço está completo e começa com http:// ou https://."
+        },
+        "unsupported_source": {
+          "title": "Fonte não compatível",
+          "description": "Esta fonte não está entre as compatíveis no momento."
+        },
+        "unavailable": {
+          "title": "Conteúdo indisponível",
+          "description": "O conteúdo pode ter sido removido ou não está acessível publicamente."
+        },
+        "private_content": {
+          "title": "Conteúdo privado",
+          "description": "Conteúdos privados não podem ser processados pela Baixaboo."
+        },
+        "protected_content": {
+          "title": "Conteúdo protegido",
+          "description": "O conteúdo possui proteção técnica. A Baixaboo não contorna DRM ou restrições de acesso."
+        },
+        "unauthorized_content": {
+          "title": "Conteúdo não autorizado",
+          "description": "Não identificamos base legal ou autorização para processar este conteúdo."
+        },
+        "age_restricted": {
+          "title": "Conteúdo com restrição de idade",
+          "description": "A fonte exige verificação de idade e o processamento foi interrompido."
+        },
+        "analysis_failed": {
+          "title": "Falha na análise",
+          "description": "Não foi possível ler as informações da mídia. Tente novamente em instantes."
+        },
+        "conversion_failed": {
+          "title": "Falha na conversão",
+          "description": "O processamento foi interrompido. Você pode tentar novamente."
+        },
+        "file_too_large": {
+          "title": "Arquivo muito grande",
+          "description": "O arquivo excede o limite de tamanho permitido para processamento."
+        },
+        "unsupported_format": {
+          "title": "Formato incompatível",
+          "description": "O formato solicitado não é compatível com esta mídia."
+        },
+        "rate_limited": {
+          "title": "Limite de requisições",
+          "description": "Muitas solicitações em pouco tempo. Aguarde alguns instantes."
+        },
+        "service_unavailable": {
+          "title": "Serviço temporariamente indisponível",
+          "description": "O serviço de processamento está indisponível. Tente novamente mais tarde."
+        },
+        "timeout": {
+          "title": "Tempo de processamento excedido",
+          "description": "A tarefa demorou mais que o limite permitido e foi encerrada."
+        },
+        "captcha_required": {
+          "title": "Verificação necessária",
+          "description": "Detectamos comportamento incomum. Conclua a verificação para continuar."
+        }
+      }
+    },
+    "Analysis": {
+      "analyzing": "Analisando mídia",
+      "thumbnail": "Miniatura de {title}",
+      "source": "Fonte detectada",
+      "resolution": "Melhor resolução",
+      "size": "Tamanho estimado",
+      "duration": "Duração",
+      "published": "Publicação",
+      "mediaType": "Tipo de mídia",
+      "delivery": "O arquivo será entregue diretamente no formato disponibilizado pela fonte original."
+    },
+    "VideoOptions": {
+      "best": "Melhor arquivo disponível",
+      "description": "A mídia é encaminhada diretamente ao seu navegador no formato original; ela não é convertida nem armazenada pela Baixaboo.",
+      "download": "Baixar vídeo original"
+    },
+    "AudioOptions": {
+      "best": "Melhor áudio disponível",
+      "original": "Formato original da fonte.",
+      "description": "O áudio é encaminhado diretamente ao seu navegador no formato original; ele não é convertido nem armazenado pela Baixaboo.",
+      "download": "Baixar áudio original"
+    },
+    "Confirm": {
+      "title": "Confirmação de responsabilidade",
+      "description": "Você confirma que possui os direitos, uma licença válida ou autorização para baixar e utilizar este conteúdo?",
+      "consent": "Entendo que sou responsável pelo conteúdo processado e pela forma como o arquivo será utilizado.",
+      "confirm": "Confirmar e baixar"
+    },
+    "Sources": {
+      "title": "Download de mídia pública e autorizada",
+      "description": "Use links públicos de plataformas compatíveis ou links diretos de áudio e vídeo. A fonte precisa permitir o acesso sem DRM ou outras restrições técnicas.",
+      "compatible": "Fontes compatíveis com yt-dlp",
+      "immediate": "Streaming imediato",
+      "noFiles": "Sem arquivos salvos",
+      "notice": "A Baixaboo não contorna DRM e não mantém cópias do arquivo. A transferência segue da fonte para o seu navegador durante o download."
+    },
+    "Benefits": {
+      "title": "Recursos da Baixaboo",
+      "items": {
+        "quality": {
+          "title": "Qualidade Full HD",
+          "text": "Baixe o arquivo na melhor qualidade disponibilizada pela fonte, limitada a 1080p."
+        },
+        "audio": {
+          "title": "Áudio separado",
+          "text": "Baixe somente a faixa de áudio quando ela estiver disponível."
+        },
+        "formats": {
+          "title": "Formato original",
+          "text": "Receba vídeo e áudio em um contêiner compatível, sem armazenamento no servidor."
+        },
+        "temporary": {
+          "title": "Transmissão direta",
+          "text": "O conteúdo é transmitido somente durante o download e não é salvo pela Baixaboo."
+        }
+      },
+      "supported": "Formatos suportados",
+      "video": "Vídeo",
+      "videoDescription": "Melhor resolução disponibilizada pela fonte até 1080p.",
+      "audio": "Áudio",
+      "audioDescription": "O formato disponível depende da mídia original."
+    },
+    "HowItWorks": {
+      "title": "Como funciona",
+      "steps": {
+        "link": {
+          "title": "Cole o link",
+          "text": "Informe o endereço de um conteúdo que você possui ou tem autorização para baixar."
+        },
+        "format": {
+          "title": "Confira a mídia",
+          "text": "A Baixaboo identifica a melhor qualidade de vídeo e áudio disponível até 1080p."
+        },
+        "download": {
+          "title": "Confirme e baixe",
+          "text": "Confirme sua autorização e receba o arquivo diretamente no navegador."
+        }
+      }
+    },
+    "Responsible": {
+      "title": "Baixe com responsabilidade",
+      "description": "A Baixaboo não concede direitos sobre nenhum conteúdo. Antes de realizar um download, certifique-se de que o conteúdo é seu, está em domínio público, possui licença compatível ou que você recebeu autorização do detentor dos direitos.",
+      "allowedTitle": "Usos aceitáveis",
+      "forbiddenTitle": "Usos proibidos",
+      "guidelines": "Diretrizes de direitos autorais",
+      "allowed": {
+        "0": "Download de conteúdo produzido pelo próprio usuário",
+        "1": "Backup de materiais próprios",
+        "2": "Conteúdo em domínio público",
+        "3": "Conteúdo com licença que permita download",
+        "4": "Arquivos com autorização expressa do criador",
+        "5": "Conteúdo disponibilizado oficialmente para download"
+      },
+      "forbidden": {
+        "0": "Distribuição não autorizada",
+        "1": "Revenda de conteúdo",
+        "2": "Uso comercial sem licença",
+        "3": "Remoção de créditos",
+        "4": "Remoção de avisos de copyright",
+        "5": "Download de conteúdo protegido sem autorização",
+        "6": "Contorno de DRM",
+        "7": "Contorno de paywalls",
+        "8": "Contorno de autenticação",
+        "9": "Contorno de restrições técnicas",
+        "10": "Violação dos termos da plataforma de origem"
+      }
+    },
+    "Faq": {
+      "title": "Perguntas frequentes",
+      "items": {
+        "0": {
+          "question": "Posso baixar qualquer conteúdo?",
+          "answer": "Não. Você deve processar apenas conteúdos próprios ou aqueles para os quais possui autorização, licença ou base legal válida."
+        },
+        "1": {
+          "question": "A Baixaboo possui vínculo com outras plataformas?",
+          "answer": "Não. A Baixaboo é independente e não possui vínculo, parceria, patrocínio ou aprovação das plataformas compatíveis."
+        },
+        "2": {
+          "question": "O YouTube é o foco da Baixaboo?",
+          "answer": "Não. O YouTube pode ser uma das fontes compatíveis, mas a Baixaboo processa diferentes tipos de links e arquivos de mídia autorizados."
+        },
+        "3": {
+          "question": "Quais formatos estão disponíveis?",
+          "answer": "As opções dependem da mídia original e da capacidade do serviço de processamento."
+        },
+        "4": {
+          "question": "Posso baixar apenas o áudio?",
+          "answer": "Sim, quando a fonte disponibilizar uma faixa de áudio compatível."
+        },
+        "5": {
+          "question": "Os arquivos ficam armazenados?",
+          "answer": "Não. O conteúdo é transmitido durante o download e não é salvo pela Baixaboo."
+        },
+        "6": {
+          "question": "Posso usar o arquivo comercialmente?",
+          "answer": "Somente quando a licença ou a autorização do detentor dos direitos permitir uso comercial."
+        },
+        "7": {
+          "question": "A Baixaboo remove proteção de conteúdo?",
+          "answer": "Não. A Baixaboo não contorna DRM, paywalls, restrições de acesso ou mecanismos de proteção."
+        },
+        "8": {
+          "question": "O download sempre estará disponível?",
+          "answer": "Não. A disponibilidade depende da fonte, do conteúdo, das permissões, do formato e de limitações técnicas ou jurídicas."
+        }
+      }
+    },
+    "LegalNotice": {
+      "title": "Responsabilidade pelo conteúdo",
+      "description": "Ao utilizar a Baixaboo, você declara que possui os direitos necessários ou autorização para baixar o conteúdo informado. É sua responsabilidade verificar direitos autorais, licenças, regras da fonte e leis aplicáveis.",
+      "link": "Entenda as regras de uso"
+    }
+  },
+  "CopyrightPage": {
+    "title": "Direitos Autorais e DMCA",
+    "updated": "fevereiro de 2026",
+    "intro": "A Baixaboo respeita os direitos de autores e titulares. Não hospedamos nem distribuímos conteúdo de terceiros: processamos apenas links informados pelo próprio usuário, que é responsável pela legalidade do uso.",
+    "allowedTitle": "Uso permitido",
+    "allowed": {
+      "0": "Conteúdo produzido pelo próprio usuário;",
+      "1": "Backup de materiais próprios;",
+      "2": "Conteúdo em domínio público;",
+      "3": "Conteúdo com licença que permita download;",
+      "4": "Conteúdo com autorização expressa do titular."
+    },
+    "forbiddenTitle": "Uso proibido",
+    "forbidden": {
+      "0": "Download de conteúdo protegido sem autorização;",
+      "1": "Distribuição, revenda ou uso comercial sem licença;",
+      "2": "Remoção de créditos ou avisos de copyright;",
+      "3": "Contorno de DRM, paywalls, autenticação ou restrições técnicas."
+    },
+    "noticeTitle": "Notificação de violação",
+    "noticeIntro": "Titulares de direitos podem solicitar providências enviando uma notificação pelo canal de contato indicado no rodapé, contendo:",
+    "noticeItems": {
+      "0": "identificação do titular e dados de contato;",
+      "1": "descrição da obra protegida;",
+      "2": "indicação precisa do uso questionado;",
+      "3": "declaração de boa-fé de que o uso não é autorizado;",
+      "4": "declaração de veracidade das informações prestadas."
+    },
+    "noticeEnd": "Notificações válidas são analisadas com prioridade e podem resultar em bloqueio técnico de fontes ou suspensão do acesso de usuários infratores."
+  },
+  "PrivacyPage": {
+    "title": "Política de Privacidade",
+    "updated": "fevereiro de 2026",
+    "intro": "Esta Política explica quais dados a Baixaboo trata, com quais finalidades e por quanto tempo, em conformidade com a LGPD (Lei nº 13.709/2018).",
+    "sections": {
+      "data": {
+        "title": "1. Dados tratados",
+        "items": {
+          "0": "Links de mídia enviados voluntariamente pelo usuário para validação e download;",
+          "1": "Dados técnicos de acesso, como endereço IP, tipo de dispositivo, navegador e idioma;",
+          "2": "Preferências salvas localmente no seu dispositivo, como o tema da interface;",
+          "3": "Nenhum arquivo de mídia: a Baixaboo não grava cópias nem cria arquivos temporários."
+        }
+      },
+      "purposes": {
+        "title": "2. Finalidades",
+        "items": {
+          "0": "Validar o link e encaminhar o download solicitado diretamente ao navegador;",
+          "1": "Garantir segurança, prevenir abusos e limitar uso automatizado;",
+          "2": "Medir desempenho e melhorar a experiência da plataforma."
+        }
+      },
+      "retention": {
+        "title": "3. Arquivos e retenção",
+        "text": "A Baixaboo não armazena arquivos de mídia, não cria filas e não usa banco de dados para downloads. O conteúdo é encaminhado em streaming da fonte ao navegador durante a solicitação e deixa de ser tratado quando a conexão é encerrada."
+      },
+      "sharing": {
+        "title": "4. Compartilhamento",
+        "text": "Não vendemos dados pessoais. O compartilhamento ocorre apenas com fornecedores de infraestrutura e medição estritamente necessários à operação, sempre limitado à finalidade informada, ou quando exigido por autoridade competente."
+      },
+      "rights": {
+        "title": "5. Direitos do titular",
+        "items": {
+          "0": "Confirmação da existência de tratamento e acesso aos dados;",
+          "1": "Correção de dados incompletos, inexatos ou desatualizados;",
+          "2": "Anonimização, bloqueio ou eliminação de dados desnecessários;",
+          "3": "Revogação do consentimento e oposição a tratamentos específicos;",
+          "4": "Portabilidade e informação sobre compartilhamentos realizados."
+        },
+        "text": "Solicitações podem ser enviadas pelo canal de contato indicado no rodapé, com resposta nos prazos legais."
+      },
+      "security": {
+        "title": "6. Segurança",
+        "text": "Adotamos medidas técnicas e organizacionais razoáveis para proteger os dados tratados. Nenhum sistema é completamente imune a incidentes, e comunicaremos eventos relevantes conforme exigido pela legislação."
+      }
+    }
+  },
+  "TermsPage": {
+    "title": "Termos de Uso",
+    "updated": "fevereiro de 2026",
+    "intro": "Estes Termos regulam o uso da Baixaboo, uma ferramenta técnica de download direto de mídia. Ao utilizar a plataforma, você declara concordar integralmente com as condições abaixo.",
+    "sections": {
+      "service": {
+        "title": "1. Natureza do serviço",
+        "text": "A Baixaboo é uma ferramenta técnica que valida links de mídia fornecidos pelo usuário e encaminha o download em streaming. A plataforma não hospeda, indexa, cataloga, armazena ou disponibiliza conteúdo de terceiros, e não concede qualquer direito sobre o conteúdo."
+      },
+      "responsibility": {
+        "title": "2. Responsabilidade do usuário",
+        "text": "O usuário é o único e integral responsável pelos links inseridos e pelo uso dos arquivos resultantes. Ao utilizar a plataforma, o usuário declara que:",
+        "items": {
+          "0": "é proprietário do conteúdo, ou possui autorização, licença ou base legal válida para processá-lo;",
+          "1": "não utilizará o serviço para infringir direitos autorais, direitos conexos ou direitos de imagem;",
+          "2": "cumprirá os termos das plataformas de origem e a legislação aplicável;",
+          "3": "responderá por eventuais danos causados a terceiros decorrentes do uso indevido."
+        }
+      },
+      "forbidden": {
+        "title": "3. Usos proibidos",
+        "items": {
+          "0": "Distribuição não autorizada, revenda ou uso comercial sem licença;",
+          "1": "Remoção de créditos ou de avisos de direitos autorais;",
+          "2": "Download de conteúdo protegido sem autorização do titular;",
+          "3": "Contorno de DRM, autenticação, paywalls ou quaisquer restrições técnicas;",
+          "4": "Violação dos termos de serviço das plataformas de origem;",
+          "5": "Uso automatizado abusivo, sobrecarga do serviço ou tentativa de burlar limites técnicos."
+        }
+      },
+      "availability": {
+        "title": "4. Disponibilidade e limitações técnicas",
+        "text": "A disponibilidade de análise e download depende da fonte, do tipo de conteúdo, das permissões concedidas e de limitações técnicas. O serviço é fornecido “no estado em que se encontra”, sem garantias de continuidade, qualidade específica ou resultado."
+      },
+      "liability": {
+        "title": "5. Limitação de responsabilidade",
+        "text": "Na máxima extensão permitida pela lei aplicável, a Baixaboo não se responsabiliza por perdas, danos diretos ou indiretos, lucros cessantes, uso indevido de conteúdo por parte do usuário ou por violações praticadas por terceiros."
+      },
+      "thirdParties": {
+        "title": "6. Ausência de vínculo com terceiros",
+        "text": "A Baixaboo é independente e não possui vínculo, parceria, patrocínio, endosso ou aprovação de qualquer plataforma, serviço, marca ou detentor de direitos mencionado na plataforma. As menções a serviços compatíveis são apenas informativas."
+      },
+      "suspension": {
+        "title": "7. Suspensão de acesso",
+        "text": "Podemos limitar, suspender ou encerrar o acesso de usuários que descumprirem estes Termos, sem aviso prévio, especialmente em casos de uso abusivo ou ilícito."
+      },
+      "changes": {
+        "title": "8. Alterações e legislação aplicável",
+        "text": "Estes Termos podem ser atualizados a qualquer momento, com efeitos a partir da publicação nesta página. Aplica-se a legislação brasileira, incluindo a Lei nº 9.610/1998 (Direitos Autorais), o Marco Civil da Internet e a LGPD."
+      }
+    }
+  }
+}
