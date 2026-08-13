@@ -442,15 +442,7 @@ class PreparationManager:
 
     @staticmethod
     def _directory_size(directory: Path) -> int:
-        total = 0
-        for media_path in directory.rglob("*"):
-            try:
-                if media_path.is_file():
-                    total += media_path.stat().st_size
-            except FileNotFoundError:
-                # Fragment downloads create and remove part files concurrently.
-                continue
-        return total
+        return sum(path.stat().st_size for path in directory.rglob("*") if path.is_file())
 
     @staticmethod
     def _reset_temp_root() -> None:

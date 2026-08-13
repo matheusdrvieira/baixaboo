@@ -68,16 +68,12 @@ class TransferProgress:
         self._callback = callback
         self._completed = [0] * len(streams)
         self._total = [stream.expected_bytes for stream in streams]
-        self._fixed_total = [stream.expected_bytes > 0 for stream in streams]
         self._lock = threading.Lock()
 
     def update(self, index: int, completed_bytes: int, total_bytes: int) -> None:
         with self._lock:
             self._completed[index] = max(self._completed[index], completed_bytes)
-            if self._fixed_total[index]:
-                self._total[index] = max(self._total[index], completed_bytes)
-            else:
-                self._total[index] = max(self._total[index], total_bytes)
+            self._total[index] = max(self._total[index], total_bytes)
             known_total = sum(self._total)
             if known_total <= 0:
                 return
@@ -250,8 +246,8 @@ def _download_stream(
     use_external_downloader: bool,
 ) -> Path:
     prefix = f"{output_stem}.{stream.kind}-{stream.index}"
-    if _is_fragmented_protocol(stream.protocol) or not use_external_downloader:
-        return _download_with_ytdlp(
+    if stream.protocol.startswith("m3u8") or not use_external_downloader:
+        return _download_hls_stream(
             url=url,
             directory=directory,
             prefix=prefix,
@@ -260,8 +256,6 @@ def _download_stream(
             progress=progress,
             abort=abort,
             disk_check=disk_check,
-            exclude_hls=use_external_downloader
-            and not stream.protocol.startswith("m3u8"),
         )
 
     for attempt in range(THROTTLE_REFRESH_ATTEMPTS + 1):
@@ -363,25 +357,19 @@ def _run_ytdlp_stream(
     ]
     options = {
         **common_options(player_client),
-        # A recently ended YouTube live can expose the same format id both as
-        # finite DASH media and as a still-open HLS/DVR manifest. Selecting by
-        # id alone lets yt-dlp pick the manifest and FFmpeg then waits forever
-        # for new segments. The format selected during analysis is non-HLS, so
-        # preserve that constraint when yt-dlp refreshes the media URL.
-        "format": f"{format_id}[protocol!*=m3u8]",
+        "format": format_id,
         "noplaylist": True,
         "outtmpl": str(directory / f"{prefix}.%(ext)s"),
         "concurrent_fragment_downloads": ARIA_CONNECTIONS,
         "external_downloader": {"default": "aria2c"},
         "external_downloader_args": {"aria2c": aria_arguments},
-        "noprogress": True,
         "overwrites": True,
     }
     with youtube_downloader(options) as downloader:
         downloader.download([url])
 
 
-def _download_with_ytdlp(
+def _download_hls_stream(
     *,
     url: str,
     directory: Path,
@@ -391,7 +379,6 @@ def _download_with_ytdlp(
     progress: TransferProgress,
     abort: TransferAbort,
     disk_check: Callable[[], None],
-    exclude_hls: bool,
 ) -> Path:
     last_disk_check = 0.0
 
@@ -425,18 +412,13 @@ def _download_with_ytdlp(
 
     options = {
         **common_options(player_client),
-        "format": (
-            f"{stream.format_id}[protocol!*=m3u8]"
-            if exclude_hls
-            else stream.format_id
-        ),
+        "format": stream.format_id,
         "noplaylist": True,
         "outtmpl": str(directory / f"{prefix}.%(ext)s"),
         "concurrent_fragment_downloads": ARIA_CONNECTIONS,
         "fragment_retries": 5,
         "retries": 3,
         "skip_unavailable_fragments": False,
-        "noprogress": True,
         "overwrites": True,
         "progress_hooks": [report],
     }
@@ -448,10 +430,6 @@ def _download_with_ytdlp(
         raise ServiceError("unavailable")
     progress.finish(stream.index)
     return candidate
-
-
-def _is_fragmented_protocol(protocol: str) -> bool:
-    return protocol.startswith("m3u8") or protocol.endswith("_segments")
 
 
 def _monitor_aria(
