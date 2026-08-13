@@ -20,7 +20,8 @@ services:
 
   core:
     build:
-      context: ./core
+      context: .
+      dockerfile: core/Dockerfile
     init: true
     environment:
       API_KEY: ${API_KEY}
@@ -50,7 +51,8 @@ services:
 
   web:
     build:
-      context: ./web
+      context: .
+      dockerfile: web/Dockerfile
       args:
         NEXT_PUBLIC_BACKEND_URL: http://localhost:8010
         NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}

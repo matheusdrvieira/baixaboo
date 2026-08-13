@@ -1,0 +1,14 @@
+.git
+.railway
+.env
+**/.env
+secrets
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/node_modules
+**/.next
+**/*.tsbuildinfo
+test-results
+playwright-report
+

@@ -1,14 +1,14 @@
 FROM oven/bun:1.3.6-alpine AS dependencies
 
 WORKDIR /app
-COPY package.json bun.lock ./
+COPY web/package.json web/bun.lock ./
 RUN bun install --frozen-lockfile
 
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY . .
+COPY web/. .
 
 ARG NEXT_PUBLIC_BACKEND_URL=http://localhost:8010
 ARG NEXT_PUBLIC_FRONTEND_URL=http://localhost:3001

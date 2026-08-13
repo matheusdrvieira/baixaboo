@@ -14,10 +14,10 @@ COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 
 WORKDIR /app
 
-COPY requirements.txt ./requirements.txt
+COPY core/requirements.txt ./requirements.txt
 RUN pip install --requirement requirements.txt
 
-COPY src ./src
+COPY core/src ./src
 
 EXPOSE 8010
 
