@@ -1,6 +1,6 @@
-FROM node:22-bookworm-slim AS node-runtime
+FROM node:24-trixie-slim AS node-runtime
 
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-trixie
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -8,17 +8,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends aria2 ca-certificates ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 baixaboo \
+    && useradd --system --uid 1000 --gid baixaboo --home-dir /app baixaboo
 
 COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 
 WORKDIR /app
 
-COPY core/requirements.txt ./requirements.txt
+COPY --chown=baixaboo:baixaboo core/requirements.txt ./requirements.txt
 RUN pip install --requirement requirements.txt
 
-COPY core/src ./src
+COPY --chown=baixaboo:baixaboo core/src ./src
 
 EXPOSE 8010
+
+USER baixaboo
 
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8010", "--no-access-log", "--no-proxy-headers"]

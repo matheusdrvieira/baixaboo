@@ -24,7 +24,6 @@ services:
       dockerfile: core/Dockerfile
     init: true
     environment:
-      API_KEY: ${API_KEY}
       SESSION_SECRET: ${SESSION_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
       POT_PROVIDER_URL: http://pot-provider:4416
@@ -56,12 +55,10 @@ services:
       args:
         NEXT_PUBLIC_BACKEND_URL: http://localhost:8010
         NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
-        NEXT_PUBLIC_API_KEY: ${API_KEY}
     init: true
     environment:
       NEXT_PUBLIC_BACKEND_URL: http://localhost:8010
       NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
-      NEXT_PUBLIC_API_KEY: ${API_KEY}
     depends_on:
       core:
         condition: service_healthy

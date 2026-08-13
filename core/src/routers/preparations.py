@@ -2,10 +2,11 @@ import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, HttpUrl
 
+from ..dependencies import download_rate_limit
 from ..services.preparations import JobSnapshot, preparation_manager
 from ..services.sessions import (
     client_ip,
@@ -25,7 +26,11 @@ class PrepareDownloadPayload(BaseModel):
     playlist: bool = False
 
 
-@router.post("", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(download_rate_limit)],
+)
 async def prepare_download(
     payload: PrepareDownloadPayload,
     request: Request,

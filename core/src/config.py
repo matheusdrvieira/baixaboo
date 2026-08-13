@@ -13,7 +13,6 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    api_key: SecretStr = Field(min_length=32)
     session_secret: SecretStr = Field(min_length=32)
     frontend_url: AnyHttpUrl = AnyHttpUrl("http://localhost:3001")
     pot_provider_url: AnyHttpUrl = AnyHttpUrl("http://pot-provider:4416")

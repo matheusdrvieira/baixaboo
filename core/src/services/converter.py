@@ -27,6 +27,7 @@ VIDEO_FORMATS = {"mp4", "webm", "mov", "mkv"}
 OPERATIONS = {"extract-audio", "extract-video", "convert-audio", "convert-video"}
 MAX_FILE_BYTES = 1_500_000_000
 MAX_CONCURRENT_PROCESSES = 4
+MAX_ACTIVE_PROCESSES_PER_IP = 1
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 READY_TTL_SECONDS = 15 * 60
 DELIVERED_TTL_SECONDS = 5 * 60
@@ -50,6 +51,7 @@ class ProcessSnapshot(TypedDict):
 class ProcessJob:
     id: str
     session_id: str
+    client_ip: str
     operation: Operation
     output_format: str
     filename: str
@@ -107,6 +109,7 @@ class ProcessManager:
         operation: str,
         output_format: str,
         session_id: str,
+        client_ip: str,
     ) -> ProcessSnapshot:
         operation = operation.lower()
         output_format = output_format.lower()
@@ -122,18 +125,26 @@ class ProcessManager:
                 for job in self._jobs.values()
             ):
                 raise ServiceError("rate_limited", 429)
+            active_for_ip = sum(
+                job.client_ip == client_ip
+                and job.status in {"processing", "ready", "downloading"}
+                for job in self._jobs.values()
+            )
+            if active_for_ip >= MAX_ACTIVE_PROCESSES_PER_IP:
+                raise ServiceError("rate_limited", 429)
             active = sum(job.status == "processing" for job in self._jobs.values())
             if active >= MAX_CONCURRENT_PROCESSES:
                 raise ServiceError("rate_limited", 429)
 
             token = secrets.token_urlsafe(24)
             directory = TEMP_ROOT / token
-            directory.mkdir(parents=True, exist_ok=False)
+            directory.mkdir(parents=True, exist_ok=False, mode=0o700)
             source_name = request.headers.get("x-file-name", "media")
             now = time.monotonic()
             job = ProcessJob(
                 id=token,
                 session_id=session_id,
+                client_ip=client_ip,
                 operation=cast(Operation, operation),
                 output_format=output_format,
                 filename=output_filename(source_name, output_format),
@@ -319,7 +330,7 @@ class ProcessManager:
     @staticmethod
     def _reset_temp_root() -> None:
         shutil.rmtree(TEMP_ROOT, ignore_errors=True)
-        TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+        TEMP_ROOT.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     def _require_lock(self) -> asyncio.Lock:
         if self._lock is None:
@@ -365,6 +376,8 @@ async def probe_media(path: Path) -> tuple[float, str | None]:
         "ffprobe",
         "-v",
         "error",
+        "-protocol_whitelist",
+        "file,pipe",
         "-show_entries",
         "format=duration:stream=codec_type,codec_name",
         "-of",
@@ -430,6 +443,8 @@ def build_ffmpeg_args(
         "pipe:1",
         "-nostats",
         "-y",
+        "-protocol_whitelist",
+        "file,pipe",
         "-i",
         str(input_path),
     ]

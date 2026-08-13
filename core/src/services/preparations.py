@@ -207,7 +207,7 @@ class PreparationManager:
                     raise ServiceError("file_too_large", 413)
                 await self._reserve(job.id, MAX_FILE_BYTES)
                 media_id = safe_identifier(str(info.get("id") or "media"))
-                job_directory.mkdir(parents=True, exist_ok=False)
+                job_directory.mkdir(parents=True, exist_ok=False, mode=0o700)
                 loop = asyncio.get_running_loop()
                 path = await asyncio.to_thread(
                     self._prepare_file,
@@ -447,7 +447,7 @@ class PreparationManager:
     @staticmethod
     def _reset_temp_root() -> None:
         shutil.rmtree(TEMP_ROOT, ignore_errors=True)
-        TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+        TEMP_ROOT.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     def _require_lock(self) -> asyncio.Lock:
         if self._lock is None:

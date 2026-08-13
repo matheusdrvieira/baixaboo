@@ -1,5 +1,4 @@
 import axios from "axios";
-import { env } from "@/shared/config/env";
 import { validateMediaUrl } from "@/shared/lib/media/format";
 import { MediaApiError, type MediaAnalysis, type MediaErrorCode } from "@/shared/lib/media/types";
 import { api } from "@/shared/services/http";
@@ -111,10 +110,7 @@ export async function downloadMedia({
     }
     if (job.status === "ready") {
       const link = document.createElement("a");
-      link.href = api.getUri({
-        url: `/downloads/${job.id}/file`,
-        params: { api_key: env.API_KEY },
-      });
+      link.href = api.getUri({ url: `/downloads/${job.id}/file` });
       link.download = job.filename ?? "baixaboo-media";
       document.body.appendChild(link);
       link.click();
@@ -231,10 +227,7 @@ export async function processMediaFile({
     if (job.status === "ready") {
       onStage?.("downloading");
       const link = document.createElement("a");
-      link.href = api.getUri({
-        url: `/process/${job.id}/file`,
-        params: { api_key: env.API_KEY },
-      });
+      link.href = api.getUri({ url: `/process/${job.id}/file` });
       link.download = job.filename ?? `baixaboo.${job.output_format}`;
       document.body.appendChild(link);
       link.click();

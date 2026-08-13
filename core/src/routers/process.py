@@ -1,20 +1,25 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, status
 from fastapi.responses import FileResponse
 
+from ..dependencies import process_rate_limit
 from ..services.converter import (
     Operation,
     OutputFormat,
     ProcessSnapshot,
     process_manager,
 )
-from ..services.sessions import require_session, session_for_request, set_session_cookie
+from ..services.sessions import client_ip, require_session, session_for_request, set_session_cookie
 
 router = APIRouter(prefix="/process", tags=["process"])
 
 
-@router.post("", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(process_rate_limit)],
+)
 async def process_media(
     request: Request,
     response: Response,
@@ -22,7 +27,13 @@ async def process_media(
     format: Annotated[OutputFormat, Query()],
 ) -> ProcessSnapshot:
     session_id, new_cookie = session_for_request(request)
-    job = await process_manager.create(request, operation, format, session_id)
+    job = await process_manager.create(
+        request,
+        operation,
+        format,
+        session_id,
+        client_ip(request),
+    )
     if new_cookie is not None:
         set_session_cookie(response, new_cookie)
     return job

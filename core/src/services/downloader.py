@@ -8,11 +8,15 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, TypedDict
+from urllib.parse import urljoin
 
 import yt_dlp
+from yt_dlp.networking._urllib import RedirectHandler, UrllibRH
+from yt_dlp.networking.exceptions import RequestError
 
 from ..config import settings
 from ..errors import ServiceError
+from .url_guard import open_public_url, validate_public_url_sync
 
 DOWNLOAD_FORMAT = (
     "bestvideo[height<=?1080][ext=mp4]+bestaudio[ext=m4a]/"
@@ -38,6 +42,37 @@ YOUTUBE_CLIENT = "mweb"
 PLAYER_CLIENT_INFO_KEY = "_baixaboo_player_client"
 
 
+class SafeRedirectHandler(RedirectHandler):
+    handler_order = 499
+
+    def redirect_request(self, request, file, code, message, headers, new_url):
+        try:
+            validate_public_url_sync(urljoin(request.full_url, new_url))
+        except ServiceError as error:
+            raise urllib.error.URLError("unsafe redirect blocked") from error
+        return super().redirect_request(request, file, code, message, headers, new_url)
+
+
+class SafeUrllibRH(UrllibRH):
+    def _create_instance(self, proxies, cookiejar, legacy_ssl_support=None):
+        opener = super()._create_instance(proxies, cookiejar, legacy_ssl_support)
+        opener.add_handler(SafeRedirectHandler())
+        return opener
+
+    def _send(self, request):
+        try:
+            validate_public_url_sync(request.url, allow_pot_provider=True)
+        except ServiceError as error:
+            raise RequestError("unsafe request blocked", cause=error) from error
+        return super()._send(request)
+
+
+class SafeYoutubeDL(yt_dlp.YoutubeDL):
+    def build_request_director(self, handlers, preferences=None):
+        safe_handlers = [SafeUrllibRH if handler is UrllibRH else handler for handler in handlers]
+        return super().build_request_director(safe_handlers, preferences)
+
+
 def common_options(player_client: str = YOUTUBE_CLIENT) -> dict[str, Any]:
     return {
         "js_runtimes": {"node": {}},
@@ -57,7 +92,7 @@ def common_options(player_client: str = YOUTUBE_CLIENT) -> dict[str, Any]:
 def youtube_downloader(options: dict[str, Any]) -> Iterator[yt_dlp.YoutubeDL]:
     source = settings.ytdlp_cookies_file
     if source is None:
-        with yt_dlp.YoutubeDL(options) as downloader:
+        with SafeYoutubeDL(options) as downloader:
             yield downloader
         return
     if not source.is_file():
@@ -67,7 +102,7 @@ def youtube_downloader(options: dict[str, Any]) -> Iterator[yt_dlp.YoutubeDL]:
         cookie_path = Path(directory) / "cookies.txt"
         shutil.copyfile(source, cookie_path)
         cookie_path.chmod(0o600)
-        with yt_dlp.YoutubeDL({**options, "cookiefile": str(cookie_path)}) as downloader:
+        with SafeYoutubeDL({**options, "cookiefile": str(cookie_path)}) as downloader:
             yield downloader
 
 
@@ -113,7 +148,7 @@ def remote_file_size(media_format: dict[str, Any]) -> int:
     }
     try:
         request = urllib.request.Request(url, headers=headers, method="HEAD")
-        with urllib.request.urlopen(request, timeout=10) as response:
+        with open_public_url(request, timeout=10) as response:
             return int(response.headers.get("Content-Length") or 0)
     except (OSError, ValueError, urllib.error.URLError):
         return 0

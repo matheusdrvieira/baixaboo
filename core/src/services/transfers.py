@@ -26,6 +26,7 @@ from .downloader import (
     selected_media_formats,
     youtube_downloader,
 )
+from .url_guard import validate_public_url_sync
 
 ARIA_CONNECTIONS = 8
 THROTTLE_BYTES_PER_SECOND = 200 * 1024
@@ -119,7 +120,15 @@ def prepare_media_file(
     disk_check: Callable[[], None],
 ) -> Path:
     formats = selected_media_formats(info)
+    for media_format in formats:
+        media_url = media_format.get("url")
+        if isinstance(media_url, str):
+            validate_public_url_sync(media_url)
+
     player_client = str(info.get(PLAYER_CLIENT_INFO_KEY) or YOUTUBE_CLIENT)
+    use_external_downloader = "youtube" in str(
+        info.get("extractor_key") or info.get("extractor") or ""
+    ).lower()
     streams = [
         MediaStream(
             index=index,
@@ -154,6 +163,7 @@ def prepare_media_file(
                 progress=progress,
                 abort=abort,
                 disk_check=disk_check,
+                use_external_downloader=use_external_downloader,
             ): stream.index
             for stream in streams
         }
@@ -197,6 +207,8 @@ def prepare_media_file(
                 "-loglevel",
                 "error",
                 "-y",
+                "-protocol_whitelist",
+                "file,pipe",
                 "-i",
                 str(video_path),
                 "-i",
@@ -231,9 +243,10 @@ def _download_stream(
     progress: TransferProgress,
     abort: TransferAbort,
     disk_check: Callable[[], None],
+    use_external_downloader: bool,
 ) -> Path:
     prefix = f"{output_stem}.{stream.kind}-{stream.index}"
-    if stream.protocol.startswith("m3u8"):
+    if stream.protocol.startswith("m3u8") or not use_external_downloader:
         return _download_hls_stream(
             url=url,
             directory=directory,
