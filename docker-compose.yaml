@@ -5,7 +5,6 @@ services:
     build:
       context: .
       dockerfile: core/Dockerfile
-    init: true
     environment:
       SESSION_SECRET: ${SESSION_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}

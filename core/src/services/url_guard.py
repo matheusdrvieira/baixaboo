@@ -2,11 +2,18 @@ import asyncio
 import ipaddress
 import socket
 import urllib.request
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse
 
 from ..errors import ServiceError
 
 ALLOWED_PORTS = {80, 443}
+YOUTUBE_HOSTNAMES = {
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "music.youtube.com",
+    "youtu.be",
+}
 
 
 async def validate_public_url(value: str) -> None:
@@ -43,6 +50,15 @@ def validate_public_url_sync(value: str) -> None:
     if not addresses or any(
         not ipaddress.ip_address(address[4][0]).is_global for address in addresses
     ):
+        raise ServiceError("invalid_url", 400)
+
+
+def validate_download_url_kind(value: str, *, playlist: bool) -> None:
+    parsed = urlparse(value)
+    is_youtube = (parsed.hostname or "").lower() in YOUTUBE_HOSTNAMES
+    playlist_ids = parse_qs(parsed.query).get("list", [])
+    is_playlist = is_youtube and any(identifier.strip() for identifier in playlist_ids)
+    if playlist != is_playlist:
         raise ServiceError("invalid_url", 400)
 
 

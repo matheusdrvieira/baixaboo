@@ -1,5 +1,5 @@
 import axios from "axios";
-import { validateMediaUrl } from "@/shared/lib/media/format";
+import { validateDownloadUrl, validateMediaUrl } from "@/shared/lib/media/format";
 import { MediaApiError, type MediaAnalysis, type MediaErrorCode } from "@/shared/lib/media/types";
 import { api } from "@/shared/services/http";
 
@@ -78,7 +78,7 @@ export async function downloadMedia({
       const { data } = await api.get<PreparedDownloadStatus>(`/downloads/${activeJobId}`);
       job = data;
     } else {
-      const validation = validateMediaUrl(url ?? "");
+      const validation = validateDownloadUrl(url ?? "", playlist ? "playlist" : "video");
       if (!validation.valid) throw new MediaApiError("invalid_url", validation.reason);
       const { data } = await api.post<PreparedDownloadStatus>("/downloads", {
         url,

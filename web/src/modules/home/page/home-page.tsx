@@ -39,7 +39,7 @@ import {
   type MediaProcessOperation,
 } from "@/modules/home/services/media.service";
 import { useDownloadMedia, useProcessMedia } from "@/modules/home/services/media.queries";
-import { validateMediaUrl } from "@/shared/lib/media/format";
+import { validateDownloadUrl } from "@/shared/lib/media/format";
 
 type ToolMode = "download" | "extract" | "convert";
 type DownloadKind = "video" | "playlist";
@@ -105,6 +105,10 @@ const translations = {
     done: "Arquivo pronto",
     error: "Não foi possível processar o arquivo. Verifique a mídia e tente novamente.",
     invalidUrl: "Informe um link público válido começando com http:// ou https://.",
+    singleVideoRequired:
+      "Este campo aceita somente links de vídeos individuais. Use a opção Playlist completa para esse link.",
+    playlistRequired:
+      "Este campo aceita somente links de playlists do YouTube com o parâmetro list.",
     downloadCta: "Baixar em Full HD",
     downloadPlaylistCta: "Baixar playlist completa",
     extractCta: "Extrair áudio em",
@@ -243,6 +247,10 @@ const translations = {
     done: "File ready",
     error: "The file could not be processed. Check the media and try again.",
     invalidUrl: "Enter a valid public link beginning with http:// or https://.",
+    singleVideoRequired:
+      "This field only accepts individual video links. Use Full playlist for this link.",
+    playlistRequired:
+      "This field only accepts YouTube playlist links containing the list parameter.",
     downloadCta: "Download in Full HD",
     downloadPlaylistCta: "Download full playlist",
     extractCta: "Extract audio as",
@@ -542,7 +550,14 @@ export default function Home() {
     setProcessProgress(0);
   }
 
-  const validDownloadUrl = validateMediaUrl(url).valid;
+  const downloadUrlValidation = validateDownloadUrl(url, downloadKind);
+  const validDownloadUrl = downloadUrlValidation.valid;
+  const downloadUrlError =
+    downloadUrlValidation.reason === "singleVideoRequired"
+      ? c.singleVideoRequired
+      : downloadUrlValidation.reason === "playlistRequired"
+        ? c.playlistRequired
+        : c.invalidUrl;
   const hasInput =
     (mode === "download" && validDownloadUrl) ||
     (mode === "extract" &&
@@ -957,7 +972,7 @@ export default function Home() {
 
                 {status === "error" && <p className="process-error">{c.error}</p>}
                 {mode === "download" && url.trim().length > 0 && !validDownloadUrl && (
-                  <p className="process-error">{c.invalidUrl}</p>
+                  <p className="process-error">{downloadUrlError}</p>
                 )}
 
                 <p className="legal-line">

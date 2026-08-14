@@ -13,9 +13,19 @@ const PRIVATE_IP_PATTERNS = [
 
 export interface UrlValidation {
   valid: boolean;
-  reason?: "required" | "invalid" | "protocol" | "internal" | "privateIp" | "domain";
+  reason?:
+    | "required"
+    | "invalid"
+    | "protocol"
+    | "internal"
+    | "privateIp"
+    | "domain"
+    | "singleVideoRequired"
+    | "playlistRequired";
   hostname?: string;
 }
+
+export type DownloadUrlKind = "video" | "playlist";
 
 export function validateMediaUrl(raw: string): UrlValidation {
   const value = raw.trim();
@@ -40,6 +50,30 @@ export function validateMediaUrl(raw: string): UrlValidation {
     return { valid: false, reason: "domain" };
   }
   return { valid: true, hostname: host };
+}
+
+export function validateDownloadUrl(raw: string, expectedKind: DownloadUrlKind): UrlValidation {
+  const validation = validateMediaUrl(raw);
+  if (!validation.valid) return validation;
+
+  const playlist = isYouTubePlaylistUrl(new URL(raw.trim()));
+  if (expectedKind === "video" && playlist) {
+    return { ...validation, valid: false, reason: "singleVideoRequired" };
+  }
+  if (expectedKind === "playlist" && !playlist) {
+    return { ...validation, valid: false, reason: "playlistRequired" };
+  }
+  return validation;
+}
+
+function isYouTubePlaylistUrl(url: URL): boolean {
+  const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+  const isYouTube =
+    hostname === "youtube.com" ||
+    hostname === "m.youtube.com" ||
+    hostname === "music.youtube.com" ||
+    hostname === "youtu.be";
+  return isYouTube && url.searchParams.getAll("list").some((identifier) => identifier.trim());
 }
 
 export function formatBytes(bytes?: number): string {

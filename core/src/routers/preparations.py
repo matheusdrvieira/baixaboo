@@ -14,7 +14,7 @@ from ..services.sessions import (
     session_for_request,
     set_session_cookie,
 )
-from ..services.url_guard import validate_public_url
+from ..services.url_guard import validate_download_url_kind, validate_public_url
 
 router = APIRouter(prefix="/downloads", tags=["downloads"])
 
@@ -38,6 +38,7 @@ async def prepare_download(
 ) -> JobSnapshot:
     url = str(payload.url)
     await validate_public_url(url)
+    validate_download_url_kind(url, playlist=payload.playlist)
     session_id, new_cookie = session_for_request(request)
     job = await preparation_manager.create(
         url,
