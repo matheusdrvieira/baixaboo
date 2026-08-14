@@ -132,6 +132,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       data-scroll-behavior="smooth"
     >
       <head>
+        <meta name="google-adsense-account" content="ca-pub-1603370692097464" />
         <script
           id="theme-initializer"
           type="text/javascript"
