@@ -20,6 +20,7 @@ export interface UrlValidation {
     | "internal"
     | "privateIp"
     | "domain"
+    | "youtubeUrl"
     | "singleVideoRequired"
     | "playlistRequired";
   hostname?: string;
@@ -27,12 +28,72 @@ export interface UrlValidation {
 
 export type DownloadUrlKind = "video" | "playlist";
 
+export type NormalizedDownloadUrl = {
+  kind: DownloadUrlKind;
+  url: string;
+};
+
+const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+const YOUTUBE_PLAYLIST_ID = /^[A-Za-z0-9_-]{10,100}$/;
+
 export function getDownloadUrlKind(raw: string): DownloadUrlKind {
+  return normalizeDownloadUrl(raw)?.kind ?? "video";
+}
+
+export function normalizeDownloadUrl(raw: string): NormalizedDownloadUrl | null {
+  let parsed: URL;
   try {
-    return isYouTubePlaylistUrl(new URL(raw.trim())) ? "playlist" : "video";
+    parsed = new URL(raw.trim());
   } catch {
-    return "video";
+    return null;
   }
+
+  if (
+    !["http:", "https:"].includes(parsed.protocol) ||
+    parsed.username ||
+    parsed.password ||
+    parsed.port
+  ) {
+    return null;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === "youtu.be") {
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    const videoId = segments.length === 1 ? segments[0] : null;
+    if (!videoId || !YOUTUBE_VIDEO_ID.test(videoId) || parsed.searchParams.has("list")) {
+      return null;
+    }
+    return {
+      kind: "video",
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+    };
+  }
+
+  if (hostname !== "youtube.com" && hostname !== "www.youtube.com") {
+    return null;
+  }
+
+  const pathname = parsed.pathname.replace(/\/$/, "");
+  if (pathname === "/watch" && !parsed.searchParams.has("list")) {
+    const videoId = parsed.searchParams.get("v")?.trim();
+    if (!videoId || !YOUTUBE_VIDEO_ID.test(videoId)) return null;
+    return {
+      kind: "video",
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+    };
+  }
+
+  if (pathname === "/playlist") {
+    const playlistId = parsed.searchParams.get("list")?.trim();
+    if (!playlistId || !YOUTUBE_PLAYLIST_ID.test(playlistId)) return null;
+    return {
+      kind: "playlist",
+      url: `https://www.youtube.com/playlist?list=${playlistId}`,
+    };
+  }
+
+  return null;
 }
 
 export function validateMediaUrl(raw: string): UrlValidation {
@@ -64,24 +125,17 @@ export function validateDownloadUrl(raw: string, expectedKind: DownloadUrlKind):
   const validation = validateMediaUrl(raw);
   if (!validation.valid) return validation;
 
-  const playlist = getDownloadUrlKind(raw) === "playlist";
-  if (expectedKind === "video" && playlist) {
+  const normalized = normalizeDownloadUrl(raw);
+  if (!normalized) {
+    return { ...validation, valid: false, reason: "youtubeUrl" };
+  }
+  if (expectedKind === "video" && normalized.kind === "playlist") {
     return { ...validation, valid: false, reason: "singleVideoRequired" };
   }
-  if (expectedKind === "playlist" && !playlist) {
+  if (expectedKind === "playlist" && normalized.kind !== "playlist") {
     return { ...validation, valid: false, reason: "playlistRequired" };
   }
   return validation;
-}
-
-function isYouTubePlaylistUrl(url: URL): boolean {
-  const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-  const isYouTube =
-    hostname === "youtube.com" ||
-    hostname === "m.youtube.com" ||
-    hostname === "music.youtube.com" ||
-    hostname === "youtu.be";
-  return isYouTube && url.searchParams.getAll("list").some((identifier) => identifier.trim());
 }
 
 export function formatBytes(bytes?: number): string {

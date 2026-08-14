@@ -1,5 +1,6 @@
 import asyncio
 import ipaddress
+import re
 import socket
 import urllib.request
 from urllib.parse import parse_qs, urljoin, urlparse
@@ -10,10 +11,10 @@ ALLOWED_PORTS = {80, 443}
 YOUTUBE_HOSTNAMES = {
     "youtube.com",
     "www.youtube.com",
-    "m.youtube.com",
-    "music.youtube.com",
     "youtu.be",
 }
+YOUTUBE_VIDEO_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
+YOUTUBE_PLAYLIST_ID = re.compile(r"^[A-Za-z0-9_-]{10,100}$")
 
 
 async def validate_public_url(value: str) -> None:
@@ -53,13 +54,45 @@ def validate_public_url_sync(value: str) -> None:
         raise ServiceError("invalid_url", 400)
 
 
-def validate_download_url_kind(value: str, *, playlist: bool) -> None:
+def normalize_download_url(value: str, *, playlist: bool) -> str:
     parsed = urlparse(value)
-    is_youtube = (parsed.hostname or "").lower() in YOUTUBE_HOSTNAMES
-    playlist_ids = parse_qs(parsed.query).get("list", [])
-    is_playlist = is_youtube and any(identifier.strip() for identifier in playlist_ids)
-    if playlist != is_playlist:
+    hostname = (parsed.hostname or "").lower()
+    if (
+        hostname not in YOUTUBE_HOSTNAMES
+        or parsed.scheme not in {"http", "https"}
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
         raise ServiceError("invalid_url", 400)
+
+    try:
+        if parsed.port is not None:
+            raise ServiceError("invalid_url", 400)
+    except ValueError as error:
+        raise ServiceError("invalid_url", 400) from error
+
+    query = parse_qs(parsed.query)
+    normalized_url: str | None = None
+    is_playlist = False
+
+    if hostname == "youtu.be":
+        segments = [segment for segment in parsed.path.split("/") if segment]
+        video_id = segments[0] if len(segments) == 1 else ""
+        if YOUTUBE_VIDEO_ID.fullmatch(video_id) and "list" not in query:
+            normalized_url = f"https://www.youtube.com/watch?v={video_id}"
+    elif parsed.path.rstrip("/") == "/watch" and "list" not in query:
+        video_id = next(iter(query.get("v", [])), "").strip()
+        if YOUTUBE_VIDEO_ID.fullmatch(video_id):
+            normalized_url = f"https://www.youtube.com/watch?v={video_id}"
+    elif parsed.path.rstrip("/") == "/playlist":
+        playlist_id = next(iter(query.get("list", [])), "").strip()
+        if YOUTUBE_PLAYLIST_ID.fullmatch(playlist_id):
+            normalized_url = f"https://www.youtube.com/playlist?list={playlist_id}"
+            is_playlist = True
+
+    if normalized_url is None or playlist != is_playlist:
+        raise ServiceError("invalid_url", 400)
+    return normalized_url
 
 
 class PublicRedirectHandler(urllib.request.HTTPRedirectHandler):

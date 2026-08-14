@@ -414,6 +414,12 @@ a {
   background: var(--paper);
   box-shadow: 0 0 0 4px var(--brand-soft);
 }
+.download-url-field[data-invalid="true"] {
+  border-color: #d97706;
+}
+.download-url-field[data-invalid="true"]:focus-within {
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
+}
 .download-url-field > svg {
   flex: 0 0 auto;
   color: #687284;
@@ -470,6 +476,27 @@ a {
 }
 .download-form .legal-line {
   margin-top: 13px;
+}
+.download-form .download-url-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  max-width: none;
+  margin: 10px 0 0;
+  color: #b45309;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.download-form .download-url-warning svg {
+  flex: 0 0 auto;
+}
+.dark .download-form .download-url-warning {
+  color: #fbbf24;
+}
+.dark .download-url-field[data-invalid="true"] {
+  border-color: #f59e0b;
 }
 
 .workspace {

@@ -5,6 +5,7 @@ import {
   ArrowRight,
   BadgeCheck,
   Check,
+  CircleAlert,
   Clapperboard,
   Download,
   Film,
@@ -37,7 +38,11 @@ import {
   type MediaProcessOperation,
 } from "@/modules/home/services/media.service";
 import { useDownloadMedia, useProcessMedia } from "@/modules/home/services/media.queries";
-import { getDownloadUrlKind, validateDownloadUrl } from "@/shared/lib/media/format";
+import {
+  getDownloadUrlKind,
+  normalizeDownloadUrl,
+  validateDownloadUrl,
+} from "@/shared/lib/media/format";
 
 type ToolMode = "download" | "extract" | "convert";
 type SecondaryToolMode = Exclude<ToolMode, "download">;
@@ -108,6 +113,8 @@ const translations = {
     done: "Arquivo pronto",
     error: "Não foi possível processar o arquivo. Verifique a mídia e tente novamente.",
     invalidUrl: "Informe um link público válido começando com http:// ou https://.",
+    youtubeUrlWarning:
+      "Link não reconhecido. Use youtube.com/watch, youtu.be ou youtube.com/playlist.",
     singleVideoRequired:
       "Este campo aceita somente links de vídeos individuais. Use a opção Playlist completa para esse link.",
     playlistRequired:
@@ -255,6 +262,8 @@ const translations = {
     done: "File ready",
     error: "The file could not be processed. Check the media and try again.",
     invalidUrl: "Enter a valid public link beginning with http:// or https://.",
+    youtubeUrlWarning:
+      "Link not recognized. Use youtube.com/watch, youtu.be, or youtube.com/playlist.",
     singleVideoRequired:
       "This field only accepts individual video links. Use Full playlist for this link.",
     playlistRequired:
@@ -561,7 +570,8 @@ export default function Home() {
   const downloadKind = getDownloadUrlKind(url);
   const downloadUrlValidation = validateDownloadUrl(url, downloadKind);
   const validDownloadUrl = downloadUrlValidation.valid;
-  const downloadUrlError = c.invalidUrl;
+  const downloadUrlError =
+    downloadUrlValidation.reason === "youtubeUrl" ? c.youtubeUrlWarning : c.invalidUrl;
   const processHasInput =
     (secondaryMode === "extract" &&
       (extractKind === "audio" ? Boolean(videoFile) : Boolean(videoTrackFile))) ||
@@ -570,9 +580,11 @@ export default function Home() {
 
   async function startDownload() {
     if (!validDownloadUrl || busy) return;
+    const normalized = normalizeDownloadUrl(url);
+    if (!normalized) return;
     setMode("download");
     setStatus("working");
-    const submittedUrl = url.trim();
+    const submittedUrl = normalized.url;
     setUrl("");
     setDownloadProgress(0);
     setDownloadStage("preparing");
@@ -686,7 +698,10 @@ export default function Home() {
           }}
         >
           <div className="download-input-row">
-            <div className="download-url-field">
+            <div
+              className="download-url-field"
+              data-invalid={url.trim().length > 0 && !validDownloadUrl ? "true" : undefined}
+            >
               <Link2 size={21} aria-hidden="true" />
               <Input
                 className="media-url-input"
@@ -702,6 +717,9 @@ export default function Home() {
                 autoComplete="url"
                 aria-label={c.downloadPlaceholder}
                 aria-invalid={url.trim().length > 0 && !validDownloadUrl}
+                aria-describedby={
+                  url.trim().length > 0 && !validDownloadUrl ? "download-url-warning" : undefined
+                }
               />
             </div>
             <Button className="download-button" type="submit" disabled={!validDownloadUrl || busy}>
@@ -727,7 +745,10 @@ export default function Home() {
 
           {mode === "download" && status === "error" && <p className="process-error">{c.error}</p>}
           {url.trim().length > 0 && !validDownloadUrl && (
-            <p className="process-error">{downloadUrlError}</p>
+            <p className="download-url-warning" id="download-url-warning">
+              <CircleAlert size={15} aria-hidden="true" />
+              <span>{downloadUrlError}</span>
+            </p>
           )}
 
           <p className="legal-line">
