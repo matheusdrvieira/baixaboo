@@ -13,6 +13,7 @@ import {
   FileVideo,
   Link2,
   Languages,
+  Menu,
   Music2,
   Moon,
   RefreshCw,
@@ -20,6 +21,7 @@ import {
   Sparkles,
   Sun,
   UploadCloud,
+  X,
   Zap,
 } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -59,6 +61,9 @@ const translations = {
     start: "Começar",
     theme: "Alternar tema",
     language: "Mudar para inglês",
+    navigation: "Navegação principal",
+    openMenu: "Abrir menu",
+    closeMenu: "Fechar menu",
     eyebrow: "DOWNLOAD DE VÍDEOS E PLAYLISTS",
     hero: "Baixe vídeos e playlists do YouTube",
     heroAccent: " em Full HD.",
@@ -206,6 +211,9 @@ const translations = {
     start: "Get started",
     theme: "Toggle theme",
     language: "Mudar para português",
+    navigation: "Primary navigation",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
     eyebrow: "VIDEO AND PLAYLIST DOWNLOADS",
     hero: "Download YouTube videos and playlists",
     heroAccent: " in Full HD.",
@@ -354,7 +362,7 @@ const translations = {
 
 function Brand() {
   return (
-    <a className="brand" href="#topo" aria-label="Baixaboo — página inicial">
+    <a className="brand" href="#topo" aria-label="Baixaboo">
       <LogoMark className="brand-logo-mark" />
       <span>Baixaboo</span>
     </a>
@@ -472,6 +480,7 @@ export default function Home() {
   const [downloadStage, setDownloadStage] = useState<DownloadStage>("preparing");
   const [status, setStatus] = useState<"idle" | "working" | "done" | "error">("idle");
   const [checkingActiveDownload, setCheckingActiveDownload] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const restoredDownload = useRef(false);
   const currentLocale = useLocale();
   const locale: Locale = currentLocale === "en" ? "en" : "pt";
@@ -543,6 +552,17 @@ export default function Home() {
       }
     })();
   }, [downloadMedia, processMedia]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+
+    function closeMenuOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    }
+
+    window.addEventListener("keydown", closeMenuOnEscape);
+    return () => window.removeEventListener("keydown", closeMenuOnEscape);
+  }, [mobileNavOpen]);
 
   function toggleTheme() {
     const next = resolvedTheme === "dark" ? "light" : "dark";
@@ -647,7 +667,7 @@ export default function Home() {
       <header className="site-header">
         <div className="header-inner">
           <Brand />
-          <nav className="desktop-nav" aria-label="Navegação principal">
+          <nav className="desktop-nav" aria-label={c.navigation}>
             {c.nav.map((label, index) => (
               <a key={navigationTargets[index]} href={`#${navigationTargets[index]}`}>
                 {label}
@@ -675,8 +695,32 @@ export default function Home() {
               <Sun size={17} className="hidden dark:block" />
               <Moon size={17} className="dark:hidden" />
             </button>
+            <button
+              className="header-control icon-only mobile-menu-toggle"
+              type="button"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              aria-controls="mobile-navigation"
+              aria-expanded={mobileNavOpen}
+              aria-label={mobileNavOpen ? c.closeMenu : c.openMenu}
+              title={mobileNavOpen ? c.closeMenu : c.openMenu}
+            >
+              {mobileNavOpen ? <X size={19} /> : <Menu size={19} />}
+            </button>
           </div>
         </div>
+        {mobileNavOpen && (
+          <nav id="mobile-navigation" className="mobile-nav" aria-label={c.navigation}>
+            {c.nav.map((label, index) => (
+              <a
+                key={navigationTargets[index]}
+                href={`#${navigationTargets[index]}`}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
       </header>
 
       <section className="hero">
