@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const backendOrigin = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8010";
+const deploymentId = process.env.NEXT_DEPLOYMENT_ID?.replace(/[^a-zA-Z0-9_-]/g, "") || undefined;
 const productionSecurityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -29,6 +30,7 @@ const productionSecurityHeaders = [
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  deploymentId,
   output: "standalone",
   poweredByHeader: false,
   async headers() {
