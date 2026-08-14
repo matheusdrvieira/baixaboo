@@ -27,6 +27,14 @@ export interface UrlValidation {
 
 export type DownloadUrlKind = "video" | "playlist";
 
+export function getDownloadUrlKind(raw: string): DownloadUrlKind {
+  try {
+    return isYouTubePlaylistUrl(new URL(raw.trim())) ? "playlist" : "video";
+  } catch {
+    return "video";
+  }
+}
+
 export function validateMediaUrl(raw: string): UrlValidation {
   const value = raw.trim();
   if (!value) return { valid: false, reason: "required" };
@@ -56,7 +64,7 @@ export function validateDownloadUrl(raw: string, expectedKind: DownloadUrlKind):
   const validation = validateMediaUrl(raw);
   if (!validation.valid) return validation;
 
-  const playlist = isYouTubePlaylistUrl(new URL(raw.trim()));
+  const playlist = getDownloadUrlKind(raw) === "playlist";
   if (expectedKind === "video" && playlist) {
     return { ...validation, valid: false, reason: "singleVideoRequired" };
   }

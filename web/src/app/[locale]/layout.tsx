@@ -17,6 +17,20 @@ const clarityScript = `
   })(window, document, "clarity", "script", "y1g8ebcj19");
 `;
 
+const themeScript = `
+  (function(){
+    try {
+      var storedTheme = localStorage.getItem("theme");
+      var theme = storedTheme === "light" ? "light" : "dark";
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      document.documentElement.style.colorScheme = theme;
+    } catch (_) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+  })();
+`;
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -110,8 +124,19 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const t = await getTranslations({ locale, namespace: "Metadata" });
 
   return (
-    <html lang={t("languageTag")} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang={t("languageTag")}
+      className="dark"
+      style={{ colorScheme: "dark" }}
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+    >
       <head>
+        <script
+          id="theme-initializer"
+          type="text/javascript"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
         {process.env.NODE_ENV === "production" && (
           <script
             id="microsoft-clarity"

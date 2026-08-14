@@ -5,7 +5,6 @@ import {
   ArrowRight,
   BadgeCheck,
   Check,
-  CirclePlay,
   Clapperboard,
   Download,
   Film,
@@ -13,7 +12,6 @@ import {
   FileVideo,
   Link2,
   Languages,
-  ListVideo,
   Music2,
   Moon,
   RefreshCw,
@@ -39,10 +37,10 @@ import {
   type MediaProcessOperation,
 } from "@/modules/home/services/media.service";
 import { useDownloadMedia, useProcessMedia } from "@/modules/home/services/media.queries";
-import { validateDownloadUrl } from "@/shared/lib/media/format";
+import { getDownloadUrlKind, validateDownloadUrl } from "@/shared/lib/media/format";
 
 type ToolMode = "download" | "extract" | "convert";
-type DownloadKind = "video" | "playlist";
+type SecondaryToolMode = Exclude<ToolMode, "download">;
 type MediaKind = "audio" | "video";
 type Locale = "pt" | "en";
 
@@ -56,11 +54,16 @@ const translations = {
     start: "Começar",
     theme: "Alternar tema",
     language: "Mudar para inglês",
-    eyebrow: "Simples, rápido e sem enrolação",
-    hero: "Baixe vídeos online, extraia áudio e converta arquivos",
-    heroAccent: " sem complicação.",
+    eyebrow: "DOWNLOAD DE VÍDEOS E PLAYLISTS",
+    hero: "Baixe vídeos e playlists do YouTube",
+    heroAccent: " em Full HD.",
     heroText:
-      "Baixe vídeos em até Full HD, extraia faixas de áudio e converta seus arquivos em poucos cliques.",
+      "Cole o link uma vez. A Baixaboo identifica automaticamente se é um vídeo ou uma playlist e prepara o download.",
+    downloadPlaceholder: "Cole o link do vídeo ou da playlist",
+    secondaryLabel: "OUTRAS FERRAMENTAS",
+    secondaryTitle: "Extraia e converta seus próprios arquivos.",
+    secondaryText:
+      "Ferramentas secundárias para remover áudio ou mudar o formato de arquivos do seu dispositivo.",
     tabs: [
       ["Baixar", "Vídeo ou playlist"],
       ["Extrair", "Áudio ou vídeo"],
@@ -109,7 +112,7 @@ const translations = {
       "Este campo aceita somente links de vídeos individuais. Use a opção Playlist completa para esse link.",
     playlistRequired:
       "Este campo aceita somente links de playlists do YouTube com o parâmetro list.",
-    downloadCta: "Baixar em Full HD",
+    downloadCta: "Baixar agora",
     downloadPlaylistCta: "Baixar playlist completa",
     extractCta: "Extrair áudio em",
     convertCta: "Converter para",
@@ -163,7 +166,7 @@ const translations = {
     faqs: [
       [
         "Como baixar um vídeo online?",
-        "Escolha Vídeo único, cole o link público, confirme que tem autorização para usar o conteúdo e clique no botão de download. O arquivo é preparado e liberado pelo navegador.",
+        "Cole o link público do vídeo ou da playlist e clique em baixar. A Baixaboo identifica o tipo de link, prepara o arquivo e o libera pelo navegador.",
       ],
       [
         "Qual é a qualidade máxima do vídeo?",
@@ -196,11 +199,16 @@ const translations = {
     start: "Get started",
     theme: "Toggle theme",
     language: "Mudar para português",
-    eyebrow: "Simple, fast and straight to the point",
-    hero: "Download videos online, extract audio and convert files",
-    heroAccent: " without the hassle.",
+    eyebrow: "VIDEO AND PLAYLIST DOWNLOADS",
+    hero: "Download YouTube videos and playlists",
+    heroAccent: " in Full HD.",
     heroText:
-      "Download videos in up to Full HD, extract audio tracks and convert your files in just a few clicks.",
+      "Paste the link once. Baixaboo automatically detects whether it is a video or playlist and prepares the download.",
+    downloadPlaceholder: "Paste the video or playlist link",
+    secondaryLabel: "OTHER TOOLS",
+    secondaryTitle: "Extract and convert your own files.",
+    secondaryText:
+      "Secondary tools for removing audio or changing the format of files on your device.",
     tabs: [
       ["Download", "Video or playlist"],
       ["Extract", "Audio or video"],
@@ -251,7 +259,7 @@ const translations = {
       "This field only accepts individual video links. Use Full playlist for this link.",
     playlistRequired:
       "This field only accepts YouTube playlist links containing the list parameter.",
-    downloadCta: "Download in Full HD",
+    downloadCta: "Download now",
     downloadPlaylistCta: "Download full playlist",
     extractCta: "Extract audio as",
     convertCta: "Convert to",
@@ -305,7 +313,7 @@ const translations = {
     faqs: [
       [
         "How do I download an online video?",
-        "Choose Single video, paste the public link, confirm that you are authorized to use the content, and click download. The file is prepared and released by your browser.",
+        "Paste the public video or playlist link and click download. Baixaboo detects the link type, prepares the file, and releases it through your browser.",
       ],
       [
         "What is the maximum video quality?",
@@ -440,7 +448,7 @@ function ToolChoice({
 
 export default function Home() {
   const [mode, setMode] = useState<ToolMode>("download");
-  const [downloadKind, setDownloadKind] = useState<DownloadKind>("video");
+  const [secondaryMode, setSecondaryMode] = useState<SecondaryToolMode>("extract");
   const [extractKind, setExtractKind] = useState<MediaKind>("audio");
   const [convertKind, setConvertKind] = useState<MediaKind>("audio");
   const [url, setUrl] = useState("");
@@ -450,7 +458,6 @@ export default function Home() {
   const [videoConvertFile, setVideoConvertFile] = useState<File | null>(null);
   const [format, setFormat] = useState("MP3");
   const [videoFormat, setVideoFormat] = useState("MP4");
-  const [authorized, setAuthorized] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [processProgress, setProcessProgress] = useState(0);
   const [downloadStage, setDownloadStage] = useState<DownloadStage>("preparing");
@@ -490,6 +497,7 @@ export default function Home() {
             MediaKind,
           ];
           setMode(nextMode);
+          setSecondaryMode(nextMode);
           if (nextMode === "extract") setExtractKind(nextKind);
           else setConvertKind(nextKind);
           if (nextKind === "audio") setFormat(activeProcess.format);
@@ -537,63 +545,61 @@ export default function Home() {
     router.replace(pathname, { locale: next });
   }
 
-  const tabs = [
-    { id: "download" as const, label: c.tabs[0][0], description: c.tabs[0][1], icon: Download },
+  const secondaryTabs = [
     { id: "extract" as const, label: c.tabs[1][0], description: c.tabs[1][1], icon: Music2 },
     { id: "convert" as const, label: c.tabs[2][0], description: c.tabs[2][1], icon: RefreshCw },
   ];
 
-  function changeMode(next: ToolMode) {
+  function changeMode(next: SecondaryToolMode) {
     if (busy) return;
     setMode(next);
+    setSecondaryMode(next);
     setStatus("idle");
     setProcessProgress(0);
   }
 
+  const downloadKind = getDownloadUrlKind(url);
   const downloadUrlValidation = validateDownloadUrl(url, downloadKind);
   const validDownloadUrl = downloadUrlValidation.valid;
-  const downloadUrlError =
-    downloadUrlValidation.reason === "singleVideoRequired"
-      ? c.singleVideoRequired
-      : downloadUrlValidation.reason === "playlistRequired"
-        ? c.playlistRequired
-        : c.invalidUrl;
-  const hasInput =
-    (mode === "download" && validDownloadUrl) ||
-    (mode === "extract" &&
+  const downloadUrlError = c.invalidUrl;
+  const processHasInput =
+    (secondaryMode === "extract" &&
       (extractKind === "audio" ? Boolean(videoFile) : Boolean(videoTrackFile))) ||
-    (mode === "convert" &&
+    (secondaryMode === "convert" &&
       (convertKind === "audio" ? Boolean(audioFile) : Boolean(videoConvertFile)));
-  const ready = hasInput && (mode !== "download" || authorized);
 
-  async function start() {
-    if (!ready || busy) return;
+  async function startDownload() {
+    if (!validDownloadUrl || busy) return;
+    setMode("download");
     setStatus("working");
-    if (mode === "download") {
-      const submittedUrl = url.trim();
-      setUrl("");
-      setDownloadProgress(0);
-      setDownloadStage("preparing");
-      try {
-        await downloadMedia.mutateAsync({
-          url: submittedUrl,
-          playlist: downloadKind === "playlist",
-          onProgress: setDownloadProgress,
-          onStage: setDownloadStage,
-        });
-        setStatus("done");
-        window.setTimeout(() => setStatus("idle"), 1500);
-      } catch {
-        setStatus("error");
-      }
-      return;
+    const submittedUrl = url.trim();
+    setUrl("");
+    setDownloadProgress(0);
+    setDownloadStage("preparing");
+    try {
+      await downloadMedia.mutateAsync({
+        url: submittedUrl,
+        playlist: downloadKind === "playlist",
+        onProgress: setDownloadProgress,
+        onStage: setDownloadStage,
+      });
+      setStatus("done");
+      window.setTimeout(() => setStatus("idle"), 1500);
+    } catch {
+      setStatus("error");
     }
+  }
+
+  async function startProcess() {
+    if (!processHasInput || busy) return;
+    setMode(secondaryMode);
+    setStatus("working");
 
     let file: File | null = null;
     let operation: MediaProcessOperation;
     let outputFormat: string;
 
-    if (mode === "extract") {
+    if (secondaryMode === "extract") {
       file = extractKind === "audio" ? videoFile : videoTrackFile;
       operation = extractKind === "audio" ? "extract-audio" : "extract-video";
       outputFormat = extractKind === "audio" ? format : videoFormat;
@@ -670,318 +676,68 @@ export default function Home() {
           <span>{c.heroAccent}</span>
         </h1>
         <p>{c.heroText}</p>
+
+        <form
+          className="download-form"
+          aria-label={c.tabs[0][0]}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void startDownload();
+          }}
+        >
+          <div className="download-input-row">
+            <div className="download-url-field">
+              <Link2 size={21} aria-hidden="true" />
+              <Input
+                className="media-url-input"
+                id="media-url"
+                value={url}
+                disabled={busy}
+                onChange={(event) => {
+                  setUrl(event.target.value);
+                  if (mode === "download") setStatus("idle");
+                }}
+                placeholder={c.downloadPlaceholder}
+                inputMode="url"
+                autoComplete="url"
+                aria-label={c.downloadPlaceholder}
+                aria-invalid={url.trim().length > 0 && !validDownloadUrl}
+              />
+            </div>
+            <Button className="download-button" type="submit" disabled={!validDownloadUrl || busy}>
+              {mode === "download" && status === "working" ? (
+                <>
+                  <RefreshCw size={19} className="spin" />
+                  <span>
+                    {downloadStage === "downloading" ? c.downloading : c.working}
+                    {downloadStage === "preparing" && ` ${downloadProgress}%`}
+                  </span>
+                </>
+              ) : mode === "download" && status === "done" ? (
+                <>
+                  <Check size={20} /> <span>{c.done}</span>
+                </>
+              ) : (
+                <>
+                  <Download size={20} /> <span>{c.downloadCta}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {mode === "download" && status === "error" && <p className="process-error">{c.error}</p>}
+          {url.trim().length > 0 && !validDownloadUrl && (
+            <p className="process-error">{downloadUrlError}</p>
+          )}
+
+          <p className="legal-line">
+            {c.legalA} <Link href="/terms">{c.terms}</Link> {c.legalB}
+          </p>
+        </form>
       </section>
 
       <div className="workspace" id="ferramentas">
         <main className="main-column">
-          <Card className="tool-card" aria-label="Ferramentas de mídia">
-            <Tabs value={mode} onValueChange={(value) => changeMode(value as ToolMode)}>
-              <TabsList className="tabs" aria-label="Escolha uma ferramenta">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const active = mode === tab.id;
-                  return (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className={active ? "tab active" : "tab"}
-                      disabled={busy}
-                    >
-                      <span className="tab-icon">
-                        <Icon size={19} />
-                      </span>
-                      <span>
-                        <strong>{tab.label}</strong>
-                        <small>{tab.description}</small>
-                      </span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-
-              <div className="tool-body">
-                {mode === "download" && (
-                  <div className="tool-panel" role="tabpanel">
-                    <ToolChoice
-                      label={c.tabs[0][0]}
-                      value={downloadKind}
-                      disabled={busy}
-                      options={[
-                        { value: "video", label: c.videoOption },
-                        { value: "playlist", label: c.playlistOption },
-                      ]}
-                      onChange={(value) => {
-                        setDownloadKind(value as DownloadKind);
-                        setStatus("idle");
-                      }}
-                    />
-                    <div className="panel-heading">
-                      <span className="panel-icon youtube">
-                        {downloadKind === "video" ? (
-                          <CirclePlay size={23} />
-                        ) : (
-                          <ListVideo size={23} />
-                        )}
-                      </span>
-                      <div>
-                        <h2>{downloadKind === "video" ? c.downloadTitle : c.playlistTitle}</h2>
-                        <p>{downloadKind === "video" ? c.downloadText : c.playlistText}</p>
-                      </div>
-                    </div>
-
-                    <Label className="field-label" htmlFor="media-url">
-                      {downloadKind === "video" ? c.link : c.playlistLink}
-                    </Label>
-                    <div className="url-field">
-                      <Link2 size={20} />
-                      <Input
-                        className="media-url-input"
-                        id="media-url"
-                        value={url}
-                        disabled={downloadMedia.isPending}
-                        onChange={(event) => {
-                          setUrl(event.target.value);
-                          setStatus("idle");
-                        }}
-                        placeholder={
-                          downloadKind === "video"
-                            ? "https://youtube.com/watch?v=..."
-                            : "https://youtube.com/playlist?list=..."
-                        }
-                        inputMode="url"
-                        aria-invalid={url.trim().length > 0 && !validDownloadUrl}
-                      />
-                      <span className="quality-pill">
-                        <Zap size={13} /> {downloadKind === "video" ? c.best : c.playlistBest}
-                      </span>
-                    </div>
-                    <div className="direct-note">
-                      <BadgeCheck size={17} />{" "}
-                      {downloadKind === "video" ? c.direct : c.playlistDirect}
-                    </div>
-                  </div>
-                )}
-
-                {mode === "extract" && (
-                  <div className="tool-panel" role="tabpanel">
-                    <ToolChoice
-                      label={c.tabs[1][0]}
-                      value={extractKind}
-                      disabled={busy}
-                      options={[
-                        { value: "audio", label: c.audioFromVideoOption },
-                        { value: "video", label: c.videoWithoutAudioOption },
-                      ]}
-                      onChange={(value) => {
-                        setExtractKind(value as MediaKind);
-                        setStatus("idle");
-                      }}
-                    />
-                    <div className="panel-heading">
-                      <span className={extractKind === "audio" ? "panel-icon" : "panel-icon video"}>
-                        {extractKind === "audio" ? <Music2 size={23} /> : <Film size={23} />}
-                      </span>
-                      <div>
-                        <h2>{extractKind === "audio" ? c.extractTitle : c.extractVideoTitle}</h2>
-                        <p>{extractKind === "audio" ? c.extractText : c.extractVideoText}</p>
-                      </div>
-                    </div>
-                    {extractKind === "audio" ? (
-                      <>
-                        <FilePicker
-                          key="extract-audio"
-                          accept="video/*,.mkv,.webm"
-                          file={videoFile}
-                          onFile={(file) => {
-                            setVideoFile(file);
-                            setStatus("idle");
-                          }}
-                          kind="video"
-                          locale={locale}
-                          disabled={busy}
-                        />
-                        <FormatControls
-                          kind="audio"
-                          format={format}
-                          setFormat={setFormat}
-                          locale={locale}
-                          disabled={busy}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <FilePicker
-                          key="extract-video"
-                          accept="video/*,.mkv,.webm"
-                          file={videoTrackFile}
-                          onFile={(file) => {
-                            setVideoTrackFile(file);
-                            setStatus("idle");
-                          }}
-                          kind="video"
-                          locale={locale}
-                          disabled={busy}
-                        />
-                        <FormatControls
-                          kind="video"
-                          format={videoFormat}
-                          setFormat={setVideoFormat}
-                          locale={locale}
-                          disabled={busy}
-                        />
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {mode === "convert" && (
-                  <div className="tool-panel" role="tabpanel">
-                    <ToolChoice
-                      label={c.tabs[2][0]}
-                      value={convertKind}
-                      disabled={busy}
-                      options={[
-                        { value: "audio", label: c.audioFileOption },
-                        { value: "video", label: c.videoFileOption },
-                      ]}
-                      onChange={(value) => {
-                        setConvertKind(value as MediaKind);
-                        setStatus("idle");
-                      }}
-                    />
-                    <div className="panel-heading">
-                      <span className={convertKind === "audio" ? "panel-icon" : "panel-icon video"}>
-                        {convertKind === "audio" ? (
-                          <RefreshCw size={22} />
-                        ) : (
-                          <Clapperboard size={23} />
-                        )}
-                      </span>
-                      <div>
-                        <h2>{convertKind === "audio" ? c.convertTitle : c.convertVideoTitle}</h2>
-                        <p>{convertKind === "audio" ? c.convertText : c.convertVideoText}</p>
-                      </div>
-                    </div>
-                    {convertKind === "audio" ? (
-                      <>
-                        <FilePicker
-                          key="convert-audio"
-                          accept="audio/*,.flac,.ogg,.m4a"
-                          file={audioFile}
-                          onFile={(file) => {
-                            setAudioFile(file);
-                            setStatus("idle");
-                          }}
-                          kind="audio"
-                          locale={locale}
-                          disabled={busy}
-                        />
-                        <FormatControls
-                          kind="audio"
-                          format={format}
-                          setFormat={setFormat}
-                          locale={locale}
-                          disabled={busy}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <FilePicker
-                          key="convert-video"
-                          accept="video/*,.mkv,.webm"
-                          file={videoConvertFile}
-                          onFile={(file) => {
-                            setVideoConvertFile(file);
-                            setStatus("idle");
-                          }}
-                          kind="video"
-                          locale={locale}
-                          disabled={busy}
-                        />
-                        <FormatControls
-                          kind="video"
-                          format={videoFormat}
-                          setFormat={setVideoFormat}
-                          locale={locale}
-                          disabled={busy}
-                        />
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {mode === "download" && (
-                  <div className="authorization">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className={authorized ? "fake-checkbox checked" : "fake-checkbox"}
-                      onClick={() => setAuthorized((value) => !value)}
-                      aria-pressed={authorized}
-                      aria-label="Confirmar autorização de uso"
-                    >
-                      {authorized && <Check size={14} strokeWidth={3} />}
-                    </Button>
-                    <p>{c.authorize}</p>
-                  </div>
-                )}
-
-                <Button
-                  className="primary-button"
-                  type="button"
-                  disabled={!ready || busy}
-                  onClick={start}
-                >
-                  {status === "working" ? (
-                    <>
-                      <RefreshCw size={19} className="spin" />{" "}
-                      {downloadStage === "downloading" ? c.downloading : c.working}
-                      {downloadStage === "preparing" &&
-                        ` ${mode === "download" ? downloadProgress : processProgress}%`}
-                    </>
-                  ) : status === "done" ? (
-                    <>
-                      <Check size={20} /> {c.done}
-                    </>
-                  ) : mode === "download" ? (
-                    <>
-                      <Download size={20} />{" "}
-                      {downloadKind === "video" ? c.downloadCta : c.downloadPlaylistCta}
-                    </>
-                  ) : mode === "extract" ? (
-                    extractKind === "audio" ? (
-                      <>
-                        <Music2 size={20} /> {c.extractCta} {format}
-                      </>
-                    ) : (
-                      <>
-                        <Film size={20} /> {c.extractVideoCta} {videoFormat}
-                      </>
-                    )
-                  ) : convertKind === "video" ? (
-                    <>
-                      <Clapperboard size={20} /> {c.convertVideoCta} {videoFormat}
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw size={20} /> {c.convertCta} {format}
-                    </>
-                  )}
-                </Button>
-
-                {status === "error" && <p className="process-error">{c.error}</p>}
-                {mode === "download" && url.trim().length > 0 && !validDownloadUrl && (
-                  <p className="process-error">{downloadUrlError}</p>
-                )}
-
-                <p className="legal-line">
-                  {c.legalA} <Link href="/terms">{c.terms}</Link> {c.legalB}
-                </p>
-              </div>
-            </Tabs>
-          </Card>
-
           <div className="trust-row">
             <div>
               <ShieldCheck size={20} />
@@ -1005,6 +761,243 @@ export default function Home() {
               </span>
             </div>
           </div>
+
+          <section className="secondary-tools" aria-labelledby="secondary-tools-title">
+            <div className="section-heading secondary-heading">
+              <span>{c.secondaryLabel}</span>
+              <h2 id="secondary-tools-title">{c.secondaryTitle}</h2>
+              <p>{c.secondaryText}</p>
+            </div>
+
+            <Card className="tool-card secondary-tool-card" aria-label={c.secondaryLabel}>
+              <Tabs
+                value={secondaryMode}
+                onValueChange={(value) => changeMode(value as SecondaryToolMode)}
+              >
+                <TabsList className="tabs secondary-tabs" aria-label={c.secondaryLabel}>
+                  {secondaryTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const active = secondaryMode === tab.id;
+                    return (
+                      <TabsTrigger
+                        key={tab.id}
+                        value={tab.id}
+                        className={active ? "tab active" : "tab"}
+                        disabled={busy}
+                      >
+                        <span className="tab-icon">
+                          <Icon size={19} />
+                        </span>
+                        <span>
+                          <strong>{tab.label}</strong>
+                          <small>{tab.description}</small>
+                        </span>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+
+                <div className="tool-body">
+                  {secondaryMode === "extract" && (
+                    <div className="tool-panel" role="tabpanel">
+                      <ToolChoice
+                        label={c.tabs[1][0]}
+                        value={extractKind}
+                        disabled={busy}
+                        options={[
+                          { value: "audio", label: c.audioFromVideoOption },
+                          { value: "video", label: c.videoWithoutAudioOption },
+                        ]}
+                        onChange={(value) => {
+                          setExtractKind(value as MediaKind);
+                          setStatus("idle");
+                        }}
+                      />
+                      <div className="panel-heading">
+                        <span
+                          className={extractKind === "audio" ? "panel-icon" : "panel-icon video"}
+                        >
+                          {extractKind === "audio" ? <Music2 size={23} /> : <Film size={23} />}
+                        </span>
+                        <div>
+                          <h2>{extractKind === "audio" ? c.extractTitle : c.extractVideoTitle}</h2>
+                          <p>{extractKind === "audio" ? c.extractText : c.extractVideoText}</p>
+                        </div>
+                      </div>
+                      {extractKind === "audio" ? (
+                        <>
+                          <FilePicker
+                            key="extract-audio"
+                            accept="video/*,.mkv,.webm"
+                            file={videoFile}
+                            onFile={(file) => {
+                              setVideoFile(file);
+                              setStatus("idle");
+                            }}
+                            kind="video"
+                            locale={locale}
+                            disabled={busy}
+                          />
+                          <FormatControls
+                            kind="audio"
+                            format={format}
+                            setFormat={setFormat}
+                            locale={locale}
+                            disabled={busy}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <FilePicker
+                            key="extract-video"
+                            accept="video/*,.mkv,.webm"
+                            file={videoTrackFile}
+                            onFile={(file) => {
+                              setVideoTrackFile(file);
+                              setStatus("idle");
+                            }}
+                            kind="video"
+                            locale={locale}
+                            disabled={busy}
+                          />
+                          <FormatControls
+                            kind="video"
+                            format={videoFormat}
+                            setFormat={setVideoFormat}
+                            locale={locale}
+                            disabled={busy}
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {secondaryMode === "convert" && (
+                    <div className="tool-panel" role="tabpanel">
+                      <ToolChoice
+                        label={c.tabs[2][0]}
+                        value={convertKind}
+                        disabled={busy}
+                        options={[
+                          { value: "audio", label: c.audioFileOption },
+                          { value: "video", label: c.videoFileOption },
+                        ]}
+                        onChange={(value) => {
+                          setConvertKind(value as MediaKind);
+                          setStatus("idle");
+                        }}
+                      />
+                      <div className="panel-heading">
+                        <span
+                          className={convertKind === "audio" ? "panel-icon" : "panel-icon video"}
+                        >
+                          {convertKind === "audio" ? (
+                            <RefreshCw size={22} />
+                          ) : (
+                            <Clapperboard size={23} />
+                          )}
+                        </span>
+                        <div>
+                          <h2>{convertKind === "audio" ? c.convertTitle : c.convertVideoTitle}</h2>
+                          <p>{convertKind === "audio" ? c.convertText : c.convertVideoText}</p>
+                        </div>
+                      </div>
+                      {convertKind === "audio" ? (
+                        <>
+                          <FilePicker
+                            key="convert-audio"
+                            accept="audio/*,.flac,.ogg,.m4a"
+                            file={audioFile}
+                            onFile={(file) => {
+                              setAudioFile(file);
+                              setStatus("idle");
+                            }}
+                            kind="audio"
+                            locale={locale}
+                            disabled={busy}
+                          />
+                          <FormatControls
+                            kind="audio"
+                            format={format}
+                            setFormat={setFormat}
+                            locale={locale}
+                            disabled={busy}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <FilePicker
+                            key="convert-video"
+                            accept="video/*,.mkv,.webm"
+                            file={videoConvertFile}
+                            onFile={(file) => {
+                              setVideoConvertFile(file);
+                              setStatus("idle");
+                            }}
+                            kind="video"
+                            locale={locale}
+                            disabled={busy}
+                          />
+                          <FormatControls
+                            kind="video"
+                            format={videoFormat}
+                            setFormat={setVideoFormat}
+                            locale={locale}
+                            disabled={busy}
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    className="primary-button"
+                    type="button"
+                    disabled={!processHasInput || busy}
+                    onClick={() => void startProcess()}
+                  >
+                    {mode === secondaryMode && status === "working" ? (
+                      <>
+                        <RefreshCw size={19} className="spin" />{" "}
+                        {downloadStage === "downloading" ? c.downloading : c.working}
+                        {downloadStage === "preparing" && ` ${processProgress}%`}
+                      </>
+                    ) : mode === secondaryMode && status === "done" ? (
+                      <>
+                        <Check size={20} /> {c.done}
+                      </>
+                    ) : secondaryMode === "extract" ? (
+                      extractKind === "audio" ? (
+                        <>
+                          <Music2 size={20} /> {c.extractCta} {format}
+                        </>
+                      ) : (
+                        <>
+                          <Film size={20} /> {c.extractVideoCta} {videoFormat}
+                        </>
+                      )
+                    ) : convertKind === "video" ? (
+                      <>
+                        <Clapperboard size={20} /> {c.convertVideoCta} {videoFormat}
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={20} /> {c.convertCta} {format}
+                      </>
+                    )}
+                  </Button>
+
+                  {mode === secondaryMode && status === "error" && (
+                    <p className="process-error">{c.error}</p>
+                  )}
+
+                  <p className="legal-line">
+                    {c.legalA} <Link href="/terms">{c.terms}</Link> {c.legalB}
+                  </p>
+                </div>
+              </Tabs>
+            </Card>
+          </section>
 
           <section className="info-section" id="como-funciona">
             <div className="section-heading">

@@ -47,14 +47,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  async redirects() {
-    return [
-      { source: "/", destination: "/pt", permanent: true },
-      { source: "/terms", destination: "/pt/terms", permanent: true },
-      { source: "/privacy", destination: "/pt/privacy", permanent: true },
-      { source: "/copyright", destination: "/pt/copyright", permanent: true },
-    ];
-  },
   turbopack: {
     root: process.cwd(),
   },
