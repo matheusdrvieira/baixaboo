@@ -139,6 +139,14 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         />
         {process.env.NODE_ENV === "production" && (
           <script
+            id="google-adsense"
+            async
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1603370692097464"
+            crossOrigin="anonymous"
+          />
+        )}
+        {process.env.NODE_ENV === "production" && (
+          <script
             id="microsoft-clarity"
             type="text/javascript"
             dangerouslySetInnerHTML={{ __html: clarityScript }}
