@@ -3,8 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import secrets
 import shutil
+import signal
 import time
 from contextlib import suppress
 from dataclasses import dataclass
@@ -30,9 +32,14 @@ MAX_CONCURRENT_PROCESSES = 4
 MAX_ACTIVE_PROCESSES_PER_IP = 1
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 READY_TTL_SECONDS = 15 * 60
+DOWNLOADING_TTL_SECONDS = 6 * 60 * 60
 DELIVERED_TTL_SECONDS = 5 * 60
 FAILED_TTL_SECONDS = 5 * 60
 CLEANUP_INTERVAL_SECONDS = 30
+UPLOAD_STALL_SECONDS = 2 * 60
+PROBE_TIMEOUT_SECONDS = 60
+PROCESS_STALL_SECONDS = 10 * 60
+MAX_PROCESS_RUNTIME_SECONDS = 6 * 60 * 60
 TEMP_ROOT = Path("/tmp/baixaboo-processes")
 logger = logging.getLogger(__name__)
 
@@ -227,36 +234,42 @@ class ProcessManager:
     async def _run(self, job: ProcessJob) -> None:
         semaphore = self._require_semaphore()
         async with semaphore:
+            stderr_task: asyncio.Task[str] | None = None
             try:
-                duration, video_codec = await probe_media(job.input_path)
-                arguments = build_ffmpeg_args(
-                    job.operation,
-                    job.output_format,
-                    job.input_path,
-                    job.output_path,
-                    video_codec,
-                )
-                process = await asyncio.create_subprocess_exec(
-                    "ffmpeg",
-                    *arguments,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    start_new_session=True,
-                )
-                job.process = process
-                stderr_task = asyncio.create_task(read_stderr(process))
-                await self._track_progress(job, process, duration)
-                stderr = await stderr_task
-                if (
-                    process.returncode != 0
-                    or not job.output_path.is_file()
-                    or job.output_path.stat().st_size == 0
-                ):
-                    logger.warning("FFmpeg conversion failed (job=%s): %s", job.id, stderr[-2_000:])
-                    raise ServiceError("conversion_failed")
+                async with asyncio.timeout(MAX_PROCESS_RUNTIME_SECONDS):
+                    duration, video_codec = await probe_media(job.input_path)
+                    arguments = build_ffmpeg_args(
+                        job.operation,
+                        job.output_format,
+                        job.input_path,
+                        job.output_path,
+                        video_codec,
+                    )
+                    process = await asyncio.create_subprocess_exec(
+                        "ffmpeg",
+                        *arguments,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        start_new_session=True,
+                    )
+                    job.process = process
+                    stderr_task = asyncio.create_task(read_stderr(process))
+                    await self._track_progress(job, process, duration)
+                    stderr = await stderr_task
+                    if (
+                        process.returncode != 0
+                        or not job.output_path.is_file()
+                        or job.output_path.stat().st_size == 0
+                    ):
+                        logger.warning(
+                            "FFmpeg conversion failed (job=%s): %s",
+                            job.id,
+                            stderr[-2_000:],
+                        )
+                        raise ServiceError("conversion_failed")
 
-                job.input_path.unlink(missing_ok=True)
-                self._update(job, status="ready", progress=100)
+                    job.input_path.unlink(missing_ok=True)
+                    self._update(job, status="ready", progress=100)
             except asyncio.CancelledError:
                 if job.process is not None:
                     await stop_process(job.process)
@@ -265,11 +278,20 @@ class ProcessManager:
             except ServiceError as error:
                 await asyncio.to_thread(shutil.rmtree, job.directory, True)
                 self._update(job, status="failed", error=error.code)
+            except TimeoutError:
+                if job.process is not None:
+                    await stop_process(job.process)
+                await asyncio.to_thread(shutil.rmtree, job.directory, True)
+                self._update(job, status="failed", error="timeout")
             except Exception:
                 await asyncio.to_thread(shutil.rmtree, job.directory, True)
                 logger.exception("Unexpected conversion failure (job=%s)", job.id)
                 self._update(job, status="failed", error="conversion_failed")
             finally:
+                if stderr_task is not None and not stderr_task.done():
+                    stderr_task.cancel()
+                    with suppress(asyncio.CancelledError):
+                        await stderr_task
                 job.process = None
 
     async def _track_progress(
@@ -280,7 +302,17 @@ class ProcessManager:
     ) -> None:
         if process.stdout is None:
             raise ServiceError("conversion_failed")
-        while line := await process.stdout.readline():
+        while True:
+            try:
+                line = await asyncio.wait_for(
+                    process.stdout.readline(),
+                    timeout=PROCESS_STALL_SECONDS,
+                )
+            except TimeoutError as error:
+                await stop_process(process)
+                raise ServiceError("timeout", 504) from error
+            if not line:
+                break
             key, separator, value = line.decode(errors="replace").strip().partition("=")
             if not separator:
                 continue
@@ -298,16 +330,40 @@ class ProcessManager:
             await asyncio.sleep(CLEANUP_INTERVAL_SECONDS)
             now = time.monotonic()
             expired: list[ProcessJob] = []
+            stalled: list[ProcessJob] = []
+            stalled_tasks: list[asyncio.Task[None]] = []
             lock = self._require_lock()
             async with lock:
                 for token, job in list(self._jobs.items()):
                     age = now - job.updated_at
-                    if (
+                    runtime = now - job.created_at
+                    if job.status == "processing" and (
+                        age >= PROCESS_STALL_SECONDS
+                        or runtime >= MAX_PROCESS_RUNTIME_SECONDS
+                    ):
+                        job.status = "failed"
+                        job.error = "timeout"
+                        job.updated_at = now
+                        stalled.append(job)
+                        task = self._tasks.get(token)
+                        if task is not None:
+                            stalled_tasks.append(task)
+                    elif (
                         (job.status == "ready" and age >= READY_TTL_SECONDS)
+                        or (
+                            job.status == "downloading"
+                            and age >= DOWNLOADING_TTL_SECONDS
+                        )
                         or (job.status == "delivered" and age >= DELIVERED_TTL_SECONDS)
                         or (job.status == "failed" and age >= FAILED_TTL_SECONDS)
                     ):
                         expired.append(self._jobs.pop(token))
+            for task in stalled_tasks:
+                task.cancel()
+            if stalled_tasks:
+                await asyncio.gather(*stalled_tasks, return_exceptions=True)
+            for job in stalled:
+                await asyncio.to_thread(shutil.rmtree, job.directory, True)
             for job in expired:
                 await asyncio.to_thread(shutil.rmtree, job.directory, True)
 
@@ -360,8 +416,18 @@ def content_length(request: Request) -> int | None:
 
 async def save_upload(request: Request, destination: Path) -> int:
     received = 0
+    stream = request.stream().__aiter__()
     with destination.open("wb", buffering=UPLOAD_CHUNK_BYTES) as output:
-        async for chunk in request.stream():
+        while True:
+            try:
+                chunk = await asyncio.wait_for(
+                    anext(stream),
+                    timeout=UPLOAD_STALL_SECONDS,
+                )
+            except StopAsyncIteration:
+                break
+            except TimeoutError as error:
+                raise ServiceError("timeout", 408) from error
             if not chunk:
                 continue
             received += len(chunk)
@@ -385,8 +451,16 @@ async def probe_media(path: Path) -> tuple[float, str | None]:
         str(path),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        start_new_session=True,
     )
-    stdout, _stderr = await process.communicate()
+    try:
+        stdout, _stderr = await asyncio.wait_for(
+            process.communicate(),
+            timeout=PROBE_TIMEOUT_SECONDS,
+        )
+    except TimeoutError as error:
+        await stop_process(process)
+        raise ServiceError("timeout", 504) from error
     if process.returncode != 0:
         raise ServiceError("invalid_file", 400)
     try:
@@ -415,10 +489,14 @@ async def stop_process(process: asyncio.subprocess.Process) -> None:
     if process.returncode is not None:
         return
     with suppress(ProcessLookupError):
+        os.killpg(process.pid, signal.SIGTERM)
+    with suppress(ProcessLookupError):
         process.terminate()
     try:
         await asyncio.wait_for(process.wait(), timeout=5)
     except TimeoutError:
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
         with suppress(ProcessLookupError):
             process.kill()
         await process.wait()

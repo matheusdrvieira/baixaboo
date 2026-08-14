@@ -41,6 +41,17 @@ class Playlist:
 
 YOUTUBE_CLIENT = "mweb"
 PLAYER_CLIENT_INFO_KEY = "_baixaboo_player_client"
+TRANSFER_FORMAT_FIELDS = {
+    "acodec",
+    "ext",
+    "filesize",
+    "filesize_approx",
+    "format_id",
+    "http_headers",
+    "protocol",
+    "url",
+    "vcodec",
+}
 
 
 class SafeRedirectHandler(RedirectHandler):
@@ -117,8 +128,23 @@ def extract_media_info(url: str) -> dict[str, Any]:
 
     if not isinstance(info, dict) or info.get("_type") in {"playlist", "multi_video"}:
         raise ServiceError("unsupported_source")
-    info[PLAYER_CLIENT_INFO_KEY] = YOUTUBE_CLIENT
-    return info
+    selected_formats = info.get("requested_formats") or [info]
+    compact_formats = [
+        {
+            key: value
+            for key, value in media_format.items()
+            if key in TRANSFER_FORMAT_FIELDS
+        }
+        for media_format in selected_formats
+        if isinstance(media_format, dict)
+    ]
+    if not compact_formats:
+        raise ServiceError("unavailable")
+    return {
+        "id": info.get("id"),
+        PLAYER_CLIENT_INFO_KEY: YOUTUBE_CLIENT,
+        "requested_formats": compact_formats,
+    }
 
 
 def selected_media_size(info: dict[str, Any]) -> int:
