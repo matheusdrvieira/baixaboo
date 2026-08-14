@@ -16,6 +16,7 @@ from yt_dlp.networking.exceptions import RequestError
 
 from ..config import settings
 from ..errors import ServiceError
+from . import pot_provider as _pot_provider  # noqa: F401
 from .url_guard import open_public_url, validate_public_url_sync
 
 DOWNLOAD_FORMAT = (
@@ -61,7 +62,7 @@ class SafeUrllibRH(UrllibRH):
 
     def _send(self, request):
         try:
-            validate_public_url_sync(request.url, allow_pot_provider=True)
+            validate_public_url_sync(request.url)
         except ServiceError as error:
             raise RequestError("unsafe request blocked", cause=error) from error
         return super()._send(request)
@@ -78,9 +79,7 @@ def common_options(player_client: str = YOUTUBE_CLIENT) -> dict[str, Any]:
         "js_runtimes": {"node": {}},
         "extractor_args": {
             "youtube": {"player_client": [player_client]},
-            "youtubepot-bgutilhttp": {
-                "base_url": [str(settings.pot_provider_url).rstrip("/")],
-            },
+            "youtubepot-wpc": {"browser_path": ["/usr/bin/chromium"]},
         },
         "quiet": True,
         "no_warnings": True,

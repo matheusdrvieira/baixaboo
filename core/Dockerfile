@@ -4,13 +4,15 @@ FROM python:3.12-slim-trixie
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    HOME=/app
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends aria2 ca-certificates ffmpeg \
+    && apt-get install --yes --no-install-recommends aria2 ca-certificates chromium ffmpeg xauth xvfb \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 10001 baixaboo \
-    && useradd --system --uid 1000 --gid baixaboo --home-dir /app baixaboo
+    && useradd --system --uid 1000 --gid baixaboo --home-dir /app baixaboo \
+    && install --directory --owner=baixaboo --group=baixaboo /app
 
 COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 
@@ -25,4 +27,4 @@ EXPOSE 8010
 
 USER baixaboo
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8010", "--no-access-log", "--no-proxy-headers"]
+CMD ["xvfb-run", "-a", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8010", "--no-access-log", "--no-proxy-headers"]

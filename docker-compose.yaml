@@ -1,23 +1,6 @@
 name: baixaboo
 
 services:
-  pot-provider:
-    image: brainicism/bgutil-ytdlp-pot-provider:1.3.1
-    init: true
-    expose:
-      - "4416"
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - fetch('http://localhost:4416/ping').then(response=>{if(!response.ok)process.exit(1)}).catch(()=>process.exit(1))
-      interval: 5s
-      timeout: 4s
-      retries: 12
-      start_period: 10s
-    restart: unless-stopped
-
   core:
     build:
       context: .
@@ -26,16 +9,12 @@ services:
     environment:
       SESSION_SECRET: ${SESSION_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
-      POT_PROVIDER_URL: http://pot-provider:4416
       YTDLP_COOKIES_FILE: /run/secrets/youtube-cookies.txt
     secrets:
       - source: youtube_cookies
         target: youtube-cookies.txt
     ports:
       - "8010:8010"
-    depends_on:
-      pot-provider:
-        condition: service_healthy
     healthcheck:
       test:
         - CMD

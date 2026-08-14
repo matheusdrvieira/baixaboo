@@ -14,9 +14,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from yt_dlp.utils import DownloadError
-
-from ..config import settings
 from ..errors import ServiceError
 from .downloader import (
     PLAYER_CLIENT_INFO_KEY,
@@ -47,6 +44,9 @@ class MediaStream:
     kind: str
     expected_bytes: int
     protocol: str
+    extension: str
+    url: str
+    headers: tuple[tuple[str, str], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,9 +126,6 @@ def prepare_media_file(
             validate_public_url_sync(media_url)
 
     player_client = str(info.get(PLAYER_CLIENT_INFO_KEY) or YOUTUBE_CLIENT)
-    use_external_downloader = "youtube" in str(
-        info.get("extractor_key") or info.get("extractor") or ""
-    ).lower()
     streams = [
         MediaStream(
             index=index,
@@ -136,10 +133,15 @@ def prepare_media_file(
             kind=_stream_kind(media_format),
             expected_bytes=media_format_size(media_format),
             protocol=str(media_format.get("protocol") or ""),
+            extension=_safe_extension(media_format.get("ext")),
+            url=str(media_format.get("url") or ""),
+            headers=_safe_http_headers(media_format.get("http_headers")),
         )
         for index, media_format in enumerate(formats)
     ]
-    if not streams or any(not stream.format_id for stream in streams):
+    if not streams or any(
+        not stream.format_id or not stream.url for stream in streams
+    ):
         raise ServiceError("unavailable")
 
     estimated_bytes = sum(stream.expected_bytes for stream in streams)
@@ -163,7 +165,6 @@ def prepare_media_file(
                 progress=progress,
                 abort=abort,
                 disk_check=disk_check,
-                use_external_downloader=use_external_downloader,
             ): stream.index
             for stream in streams
         }
@@ -243,10 +244,9 @@ def _download_stream(
     progress: TransferProgress,
     abort: TransferAbort,
     disk_check: Callable[[], None],
-    use_external_downloader: bool,
 ) -> Path:
     prefix = f"{output_stem}.{stream.kind}-{stream.index}"
-    if stream.protocol.startswith("m3u8") or not use_external_downloader:
+    if stream.protocol.startswith("m3u8"):
         return _download_hls_stream(
             url=url,
             directory=directory,
@@ -262,6 +262,7 @@ def _download_stream(
         if abort.event.is_set():
             raise abort.error or ServiceError("service_unavailable")
 
+        retry_error: BaseException | None = None
         rpc_port = _claim_rpc_port()
         rpc_secret = secrets.token_urlsafe(24)
         stop = threading.Event()
@@ -285,24 +286,32 @@ def _download_stream(
         )
         monitor.start()
         try:
-            _run_ytdlp_stream(
-                url=url,
+            _run_aria_stream(
                 directory=directory,
                 prefix=prefix,
-                format_id=stream.format_id,
+                stream=stream,
                 rpc_port=rpc_port,
                 rpc_secret=rpc_secret,
-                player_client=player_client,
             )
-        except DownloadError:
+        except (OSError, subprocess.CalledProcessError) as error:
             if abort.error is not None:
                 raise abort.error
-            if not throttled.is_set() or attempt >= THROTTLE_REFRESH_ATTEMPTS:
-                raise
+            if attempt >= THROTTLE_REFRESH_ATTEMPTS:
+                raise ServiceError("unavailable") from error
+            retry_error = error
         finally:
             stop.set()
             monitor.join(timeout=1)
             _release_rpc_port(rpc_port)
+
+        if retry_error is not None:
+            logger.warning(
+                "Media transfer interrupted; resuming stream (format=%s, attempt=%s)",
+                stream.format_id,
+                attempt + 1,
+            )
+            time.sleep(1)
+            continue
 
         candidate = _finished_stream_path(directory, prefix)
         if candidate is not None:
@@ -311,27 +320,23 @@ def _download_stream(
         if not throttled.is_set():
             raise ServiceError("unavailable")
 
-        _remove_aria_control_files(directory, prefix)
         logger.warning(
-            "YouTube transfer throttled; refreshing the PO token (format=%s, attempt=%s)",
+            "Media transfer throttled; resuming stream (format=%s, attempt=%s)",
             stream.format_id,
             attempt + 1,
         )
-        _invalidate_pot_cache()
         time.sleep(0.25)
 
     raise ServiceError("service_unavailable")
 
 
-def _run_ytdlp_stream(
+def _run_aria_stream(
     *,
-    url: str,
     directory: Path,
     prefix: str,
-    format_id: str,
+    stream: MediaStream,
     rpc_port: int,
     rpc_secret: str,
-    player_client: str,
 ) -> None:
     aria_arguments = [
         f"--max-connection-per-server={ARIA_CONNECTIONS}",
@@ -355,18 +360,25 @@ def _run_ytdlp_stream(
         "--rpc-listen-all=false",
         "--rpc-allow-origin-all=false",
     ]
-    options = {
-        **common_options(player_client),
-        "format": format_id,
-        "noplaylist": True,
-        "outtmpl": str(directory / f"{prefix}.%(ext)s"),
-        "concurrent_fragment_downloads": ARIA_CONNECTIONS,
-        "external_downloader": {"default": "aria2c"},
-        "external_downloader_args": {"aria2c": aria_arguments},
-        "overwrites": True,
-    }
-    with youtube_downloader(options) as downloader:
-        downloader.download([url])
+    output_name = f"{prefix}.{stream.extension}"
+    header_arguments = [
+        f"--header={name}: {value}" for name, value in stream.headers
+    ]
+    subprocess.run(
+        [
+            "aria2c",
+            *aria_arguments,
+            "--allow-overwrite=true",
+            "--auto-file-renaming=false",
+            f"--dir={directory}",
+            f"--out={output_name}",
+            *header_arguments,
+            stream.url,
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 def _download_hls_stream(
@@ -588,20 +600,6 @@ def _shutdown_aria(port: int, secret: str, *, force: bool = False) -> None:
         return
 
 
-def _invalidate_pot_cache() -> None:
-    base_url = str(settings.pot_provider_url).rstrip("/")
-    request = urllib.request.Request(
-        f"{base_url}/invalidate_caches",
-        data=b"",
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=2):
-            return
-    except (OSError, urllib.error.URLError):
-        return
-
-
 def _finished_stream_path(directory: Path, prefix: str) -> Path | None:
     candidates = [
         path
@@ -613,11 +611,6 @@ def _finished_stream_path(directory: Path, prefix: str) -> Path | None:
     return candidates[0] if len(candidates) == 1 else None
 
 
-def _remove_aria_control_files(directory: Path, prefix: str) -> None:
-    for path in directory.glob(f"{prefix}*.aria2"):
-        path.unlink(missing_ok=True)
-
-
 def _stream_kind(media_format: dict[str, object]) -> str:
     has_video = str(media_format.get("vcodec") or "none") != "none"
     has_audio = str(media_format.get("acodec") or "none") != "none"
@@ -626,6 +619,28 @@ def _stream_kind(media_format: dict[str, object]) -> str:
     if has_audio and not has_video:
         return "audio"
     return "combined"
+
+
+def _safe_extension(value: object) -> str:
+    extension = str(value or "bin").lower()
+    return extension if extension.isalnum() and len(extension) <= 8 else "bin"
+
+
+def _safe_http_headers(value: object) -> tuple[tuple[str, str], ...]:
+    if not isinstance(value, dict):
+        return ()
+    headers: list[tuple[str, str]] = []
+    for raw_name, raw_value in value.items():
+        name = str(raw_name)
+        header_value = str(raw_value)
+        if (
+            name
+            and all(character.isalnum() or character == "-" for character in name)
+            and "\r" not in header_value
+            and "\n" not in header_value
+        ):
+            headers.append((name, header_value))
+    return tuple(headers)
 
 
 def _claim_rpc_port() -> int:
