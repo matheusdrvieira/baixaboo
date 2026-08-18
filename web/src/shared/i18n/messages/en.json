@@ -82,6 +82,147 @@
     "privacy": "Privacy",
     "copyright": "Copyright"
   },
+  "HomePage": {
+    "nav": ["How it works", "Formats", "Responsible use", "Frequently asked questions"],
+    "start": "Get started",
+    "theme": "Toggle theme",
+    "language": "Mudar para português",
+    "navigation": "Primary navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "eyebrow": "VIDEO AND PLAYLIST DOWNLOADS",
+    "hero": "Download YouTube videos and playlists",
+    "heroAccent": " in Full HD.",
+    "heroText": "Paste the link once. Baixaboo automatically detects whether it is a video or playlist and prepares the download.",
+    "downloadPlaceholder": "Paste the video or playlist link",
+    "secondaryLabel": "OTHER TOOLS",
+    "secondaryTitle": "Extract and convert your own files.",
+    "secondaryText": "Secondary tools for removing audio or changing the format of files on your device.",
+    "tabs": [
+      ["Download", "Video or playlist"],
+      ["Extract", "Audio or video"],
+      ["Convert", "Audio or video"]
+    ],
+    "videoOption": "Single video",
+    "playlistOption": "Full playlist",
+    "audioFromVideoOption": "Audio from video",
+    "videoWithoutAudioOption": "Video without audio",
+    "audioFileOption": "Audio file",
+    "videoFileOption": "Video file",
+    "downloadTitle": "Download your video",
+    "downloadText": "Just paste the link. We fetch the best available quality up to Full HD with audio.",
+    "playlistTitle": "Download the full playlist",
+    "playlistText": "Paste the playlist link to prepare every video in up to Full HD.",
+    "link": "Video link",
+    "playlistLink": "Playlist link",
+    "best": "Full HD 1080p",
+    "playlistBest": "Full playlist",
+    "direct": "The download uses the best available option up to Full HD 1080p.",
+    "playlistDirect": "Every video in the playlist will be prepared with audio in up to Full HD 1080p.",
+    "extractTitle": "Extract audio from a video",
+    "extractText": "Upload your video and extract its audio in the best available quality.",
+    "convertTitle": "Convert an audio file",
+    "convertText": "Change the file format while preserving the best possible quality.",
+    "extractVideoTitle": "Extract the video track",
+    "extractVideoText": "Remove the audio track and save only the visual stream from the original file.",
+    "convertVideoTitle": "Convert a video file",
+    "convertVideoText": "Upload your file, choose a format and preserve the best possible quality.",
+    "uploadVideo": "Drop your video or click to choose",
+    "uploadAudio": "Drop your audio or click to choose",
+    "changeFile": "Click to replace",
+    "lockedFile": "File locked while processing",
+    "videoFormats": "MP4, MOV, MKV or WEBM",
+    "audioFileFormats": "MP3, M4A, WAV, FLAC, AAC or OGG",
+    "output": "Output format",
+    "authorize": "I confirm that I own or have permission to use this content and that my use will be personal and non-commercial.",
+    "working": "Preparing file...",
+    "downloading": "Downloading file...",
+    "done": "File ready",
+    "error": "The file could not be processed. Check the media and try again.",
+    "invalidUrl": "Enter a valid public link beginning with http:// or https://.",
+    "youtubeUrlWarning": "Link not recognized. Use youtube.com/watch, youtu.be, or youtube.com/playlist.",
+    "singleVideoRequired": "This field only accepts individual video links. Use Full playlist for this link.",
+    "playlistRequired": "This field only accepts YouTube playlist links containing the list parameter.",
+    "downloadCta": "Download now",
+    "downloadPlaylistCta": "Download full playlist",
+    "extractCta": "Extract audio as",
+    "convertCta": "Convert to",
+    "extractVideoCta": "Extract video as",
+    "convertVideoCta": "Convert video to",
+    "legalA": "By continuing, you agree to the",
+    "terms": "Terms of Use",
+    "legalB": "and accept responsibility for the processed content.",
+    "trust": [
+      ["Secure processing", "Your files are not kept"],
+      ["No unnecessary steps", "Every tool has a direct flow"],
+      ["Responsible use", "You stay in control of the content"]
+    ],
+    "how": "HOW IT WORKS",
+    "howTitle": "Choose what you need and finish in three steps.",
+    "steps": [
+      ["Choose a tool", "Select download, extract or convert."],
+      ["Add your media", "Paste a link or choose a file from your device."],
+      ["Get the result", "Download the best quality or your chosen format."]
+    ],
+    "formats": "SUPPORTED FORMATS",
+    "formatsTitle": "The formats you use most, without the hassle.",
+    "formatsText": "Download videos in up to Full HD, remove audio tracks, or convert files to formats compatible with phones, computers, players, and editors.",
+    "solutionsLabel": "FEATURES",
+    "solutionsTitle": "Online tools for every step of your media workflow.",
+    "solutions": [
+      [
+        "Download videos online",
+        "Paste a public link and prepare a video with audio in the best available option up to Full HD 1080p."
+      ],
+      [
+        "Download playlists",
+        "Submit a playlist link to receive the videos organized in a single ZIP archive."
+      ],
+      [
+        "Extract audio from video",
+        "Turn an audio track into MP3, M4A, WAV, FLAC, AAC, or OGG without installing software."
+      ],
+      [
+        "Convert audio and video",
+        "Convert your own files between MP4, WebM, MOV, MKV, and widely used audio formats."
+      ]
+    ],
+    "responsibleTitle": "You decide what to process. You are responsible for the content.",
+    "responsibleText": "Use Baixaboo only with your own, licensed, public-domain or otherwise authorized content. Do not use the tool for redistribution or commercial purposes.",
+    "guidelines": "View guidelines",
+    "faqLabel": "FREQUENTLY ASKED QUESTIONS",
+    "faqTitle": "Questions about downloading, extracting, and converting media.",
+    "faqs": [
+      [
+        "How do I download an online video?",
+        "Paste the public video or playlist link and click download. Baixaboo detects the link type, prepares the file, and releases it through your browser."
+      ],
+      [
+        "What is the maximum video quality?",
+        "Baixaboo looks for the best available option up to Full HD 1080p with audio. The final resolution also depends on the quality provided by the source."
+      ],
+      [
+        "Do I need to install software or create an account?",
+        "No. The tools work directly in a modern browser and require no installation or registration."
+      ],
+      [
+        "Which audio and video formats are supported?",
+        "You can work with MP3, M4A, WAV, FLAC, AAC, and OGG for audio, plus MP4, WebM, MOV, and MKV for video."
+      ],
+      [
+        "Are uploaded files stored?",
+        "We do not keep a library of your files. They are used temporarily to complete the task and are automatically removed by the service."
+      ],
+      [
+        "Can I download any content?",
+        "Only use your own content, public-domain material, content licensed for download, or content authorized by its owner. You are responsible for respecting copyright and source terms."
+      ]
+    ],
+    "footerText": "Simple tools for working with your own media.",
+    "privacy": "Privacy",
+    "copyright": "Copyright",
+    "footerLegal": "Independent service, not affiliated with YouTube or Google."
+  },
   "Home": {
     "Hero": {
       "eyebrow": "Convert. Choose. Download.",
