@@ -1,6 +1,25 @@
 "use client";
 
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useDownloadMedia, useProcessMedia } from "@/modules/home/services/media.queries";
+import {
+  getActiveDownloadId,
+  getActiveMediaProcess,
+  type DownloadStage,
+  type MediaProcessOperation,
+} from "@/modules/home/services/media.service";
+import { LogoMark } from "@/shared/components/baixaboo/Logo";
+import { Button } from "@/shared/components/ui/button";
+import { Card } from "@/shared/components/ui/card";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { useTheme } from "@/shared/contexts/theme";
+import { Link, usePathname, useRouter } from "@/shared/i18n/navigation";
+import {
+  getDownloadUrlKind,
+  normalizeDownloadUrl,
+  validateDownloadUrl,
+} from "@/shared/lib/media/format";
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,14 +27,14 @@ import {
   CircleAlert,
   Clapperboard,
   Download,
-  Film,
   FileAudio,
   FileVideo,
-  Link2,
+  Film,
   Languages,
+  Link2,
   Menu,
-  Music2,
   Moon,
+  Music2,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -25,26 +44,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useTheme } from "@/shared/contexts/theme";
-import { LogoMark } from "@/shared/components/baixaboo/Logo";
-import { Button } from "@/shared/components/ui/button";
-import { Card } from "@/shared/components/ui/card";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { Link, usePathname, useRouter } from "@/shared/i18n/navigation";
-import {
-  getActiveDownloadId,
-  getActiveMediaProcess,
-  type DownloadStage,
-  type MediaProcessOperation,
-} from "@/modules/home/services/media.service";
-import { useDownloadMedia, useProcessMedia } from "@/modules/home/services/media.queries";
-import {
-  getDownloadUrlKind,
-  normalizeDownloadUrl,
-  validateDownloadUrl,
-} from "@/shared/lib/media/format";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 type ToolMode = "download" | "extract" | "convert";
 type SecondaryToolMode = Exclude<ToolMode, "download">;
@@ -752,6 +752,7 @@ export default function Home() {
                 id="media-url"
                 value={url}
                 disabled={busy}
+                data-clarity-unmask="true"
                 onChange={(event) => {
                   setUrl(event.target.value);
                   if (mode === "download") setStatus("idle");
