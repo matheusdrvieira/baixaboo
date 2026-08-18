@@ -182,105 +182,6 @@ export default function Home() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("HomePage");
-  const c = {
-    nav: t.raw("nav") as string[],
-    start: t("start"),
-    theme: t("theme"),
-    language: t("language"),
-    navigation: t("navigation"),
-    openMenu: t("openMenu"),
-    closeMenu: t("closeMenu"),
-    eyebrow: t("eyebrow"),
-    hero: t("hero"),
-    heroAccent: t("heroAccent"),
-    heroText: t("heroText"),
-    downloadPlaceholder: t("downloadPlaceholder"),
-    secondaryLabel: t("secondaryLabel"),
-    secondaryTitle: t("secondaryTitle"),
-    secondaryText: t("secondaryText"),
-    tabs: t.raw("tabs") as readonly [
-      readonly [string, string],
-      readonly [string, string],
-      readonly [string, string],
-    ],
-    videoOption: t("videoOption"),
-    playlistOption: t("playlistOption"),
-    audioFromVideoOption: t("audioFromVideoOption"),
-    videoWithoutAudioOption: t("videoWithoutAudioOption"),
-    audioFileOption: t("audioFileOption"),
-    videoFileOption: t("videoFileOption"),
-    downloadTitle: t("downloadTitle"),
-    downloadText: t("downloadText"),
-    playlistTitle: t("playlistTitle"),
-    playlistText: t("playlistText"),
-    link: t("link"),
-    playlistLink: t("playlistLink"),
-    best: t("best"),
-    playlistBest: t("playlistBest"),
-    direct: t("direct"),
-    playlistDirect: t("playlistDirect"),
-    extractTitle: t("extractTitle"),
-    extractText: t("extractText"),
-    convertTitle: t("convertTitle"),
-    convertText: t("convertText"),
-    extractVideoTitle: t("extractVideoTitle"),
-    extractVideoText: t("extractVideoText"),
-    convertVideoTitle: t("convertVideoTitle"),
-    convertVideoText: t("convertVideoText"),
-    uploadVideo: t("uploadVideo"),
-    uploadAudio: t("uploadAudio"),
-    changeFile: t("changeFile"),
-    lockedFile: t("lockedFile"),
-    videoFormats: t("videoFormats"),
-    audioFileFormats: t("audioFileFormats"),
-    output: t("output"),
-    authorize: t("authorize"),
-    working: t("working"),
-    downloading: t("downloading"),
-    done: t("done"),
-    error: t("error"),
-    invalidUrl: t("invalidUrl"),
-    youtubeUrlWarning: t("youtubeUrlWarning"),
-    singleVideoRequired: t("singleVideoRequired"),
-    playlistRequired: t("playlistRequired"),
-    downloadCta: t("downloadCta"),
-    downloadPlaylistCta: t("downloadPlaylistCta"),
-    extractCta: t("extractCta"),
-    convertCta: t("convertCta"),
-    extractVideoCta: t("extractVideoCta"),
-    convertVideoCta: t("convertVideoCta"),
-    legalA: t("legalA"),
-    terms: t("terms"),
-    legalB: t("legalB"),
-    trust: t.raw("trust") as readonly [
-      readonly [string, string],
-      readonly [string, string],
-      readonly [string, string],
-    ],
-    how: t("how"),
-    howTitle: t("howTitle"),
-    steps: t.raw("steps") as readonly [
-      readonly [string, string],
-      readonly [string, string],
-      readonly [string, string],
-    ],
-    formats: t("formats"),
-    formatsTitle: t("formatsTitle"),
-    formatsText: t("formatsText"),
-    solutionsLabel: t("solutionsLabel"),
-    solutionsTitle: t("solutionsTitle"),
-    solutions: t.raw("solutions") as readonly (readonly [string, string])[],
-    responsibleTitle: t("responsibleTitle"),
-    responsibleText: t("responsibleText"),
-    guidelines: t("guidelines"),
-    faqLabel: t("faqLabel"),
-    faqTitle: t("faqTitle"),
-    faqs: t.raw("faqs") as readonly (readonly [string, string])[],
-    footerText: t("footerText"),
-    privacy: t("privacy"),
-    copyright: t("copyright"),
-    footerLegal: t("footerLegal"),
-  };
   const downloadMedia = useDownloadMedia();
   const processMedia = useProcessMedia();
   const busy =
@@ -368,8 +269,8 @@ export default function Home() {
   }
 
   const secondaryTabs = [
-    { id: "extract" as const, label: c.tabs[1][0], description: c.tabs[1][1], icon: Music2 },
-    { id: "convert" as const, label: c.tabs[2][0], description: c.tabs[2][1], icon: RefreshCw },
+    { id: "extract" as const, label: t("tabs.1.0"), description: t("tabs.1.1"), icon: Music2 },
+    { id: "convert" as const, label: t("tabs.2.0"), description: t("tabs.2.1"), icon: RefreshCw },
   ];
 
   function changeMode(next: SecondaryToolMode) {
@@ -384,7 +285,7 @@ export default function Home() {
   const downloadUrlValidation = validateDownloadUrl(url, downloadKind);
   const validDownloadUrl = downloadUrlValidation.valid;
   const downloadUrlError =
-    downloadUrlValidation.reason === "youtubeUrl" ? c.youtubeUrlWarning : c.invalidUrl;
+    downloadUrlValidation.reason === "youtubeUrl" ? t("youtubeUrlWarning") : t("invalidUrl");
   const processHasInput =
     (secondaryMode === "extract" &&
       (extractKind === "audio" ? Boolean(videoFile) : Boolean(videoTrackFile))) ||
@@ -460,8 +361,8 @@ export default function Home() {
       <header className="site-header">
         <div className="header-inner">
           <Brand />
-          <nav className="desktop-nav" aria-label={c.navigation}>
-            {c.nav.map((label, index) => (
+          <nav className="desktop-nav" aria-label={t("navigation")}>
+            {(t.raw("nav") as string[]).map((label, index) => (
               <a key={navigationTargets[index]} href={`#${navigationTargets[index]}`}>
                 {label}
               </a>
@@ -472,8 +373,8 @@ export default function Home() {
               className="header-control"
               type="button"
               onClick={toggleLocale}
-              aria-label={c.language}
-              title={c.language}
+              aria-label={t("language")}
+              title={t("language")}
             >
               <Languages size={17} />
               <span>{locale.toUpperCase()}</span>
@@ -482,8 +383,8 @@ export default function Home() {
               className="header-control icon-only"
               type="button"
               onClick={toggleTheme}
-              aria-label={c.theme}
-              title={c.theme}
+              aria-label={t("theme")}
+              title={t("theme")}
             >
               <Sun size={17} className="hidden dark:block" />
               <Moon size={17} className="dark:hidden" />
@@ -494,16 +395,16 @@ export default function Home() {
               onClick={() => setMobileNavOpen((open) => !open)}
               aria-controls="mobile-navigation"
               aria-expanded={mobileNavOpen}
-              aria-label={mobileNavOpen ? c.closeMenu : c.openMenu}
-              title={mobileNavOpen ? c.closeMenu : c.openMenu}
+              aria-label={mobileNavOpen ? t("closeMenu") : t("openMenu")}
+              title={mobileNavOpen ? t("closeMenu") : t("openMenu")}
             >
               {mobileNavOpen ? <X size={19} /> : <Menu size={19} />}
             </button>
           </div>
         </div>
         {mobileNavOpen && (
-          <nav id="mobile-navigation" className="mobile-nav" aria-label={c.navigation}>
-            {c.nav.map((label, index) => (
+          <nav id="mobile-navigation" className="mobile-nav" aria-label={t("navigation")}>
+            {(t.raw("nav") as string[]).map((label, index) => (
               <a
                 key={navigationTargets[index]}
                 href={`#${navigationTargets[index]}`}
@@ -518,17 +419,17 @@ export default function Home() {
 
       <section className="hero">
         <div className="eyebrow">
-          <Sparkles size={14} /> {c.eyebrow}
+          <Sparkles size={14} /> {t("eyebrow")}
         </div>
         <h1>
-          {c.hero}
-          <span>{c.heroAccent}</span>
+          {t("hero")}
+          <span>{t("heroAccent")}</span>
         </h1>
-        <p>{c.heroText}</p>
+        <p>{t("heroText")}</p>
 
         <form
           className="download-form"
-          aria-label={c.tabs[0][0]}
+          aria-label={t("tabs.0.0")}
           onSubmit={(event) => {
             event.preventDefault();
             void startDownload();
@@ -550,10 +451,10 @@ export default function Home() {
                   setUrl(event.target.value);
                   if (mode === "download") setStatus("idle");
                 }}
-                placeholder={c.downloadPlaceholder}
+                placeholder={t("downloadPlaceholder")}
                 inputMode="url"
                 autoComplete="url"
-                aria-label={c.downloadPlaceholder}
+                aria-label={t("downloadPlaceholder")}
                 aria-invalid={url.trim().length > 0 && !validDownloadUrl}
                 aria-describedby={
                   url.trim().length > 0 && !validDownloadUrl ? "download-url-warning" : undefined
@@ -565,23 +466,25 @@ export default function Home() {
                 <>
                   <RefreshCw size={19} className="spin" />
                   <span>
-                    {downloadStage === "downloading" ? c.downloading : c.working}
+                    {downloadStage === "downloading" ? t("downloading") : t("working")}
                     {downloadStage === "preparing" && ` ${downloadProgress}%`}
                   </span>
                 </>
               ) : mode === "download" && status === "done" ? (
                 <>
-                  <Check size={20} /> <span>{c.done}</span>
+                  <Check size={20} /> <span>{t("done")}</span>
                 </>
               ) : (
                 <>
-                  <Download size={20} /> <span>{c.downloadCta}</span>
+                  <Download size={20} /> <span>{t("downloadCta")}</span>
                 </>
               )}
             </Button>
           </div>
 
-          {mode === "download" && status === "error" && <p className="process-error">{c.error}</p>}
+          {mode === "download" && status === "error" && (
+            <p className="process-error">{t("error")}</p>
+          )}
           {url.trim().length > 0 && !validDownloadUrl && (
             <p className="download-url-warning" id="download-url-warning">
               <CircleAlert size={15} aria-hidden="true" />
@@ -590,7 +493,7 @@ export default function Home() {
           )}
 
           <p className="legal-line">
-            {c.legalA} <Link href="/terms">{c.terms}</Link> {c.legalB}
+            {t("legalA")} <Link href="/terms">{t("terms")}</Link> {t("legalB")}
           </p>
         </form>
       </section>
@@ -601,39 +504,39 @@ export default function Home() {
             <div>
               <ShieldCheck size={20} />
               <span>
-                <strong>{c.trust[0][0]}</strong>
-                <small>{c.trust[0][1]}</small>
+                <strong>{t("trust.0.0")}</strong>
+                <small>{t("trust.0.1")}</small>
               </span>
             </div>
             <div>
               <Zap size={20} />
               <span>
-                <strong>{c.trust[1][0]}</strong>
-                <small>{c.trust[1][1]}</small>
+                <strong>{t("trust.1.0")}</strong>
+                <small>{t("trust.1.1")}</small>
               </span>
             </div>
             <div>
               <BadgeCheck size={20} />
               <span>
-                <strong>{c.trust[2][0]}</strong>
-                <small>{c.trust[2][1]}</small>
+                <strong>{t("trust.2.0")}</strong>
+                <small>{t("trust.2.1")}</small>
               </span>
             </div>
           </div>
 
           <section className="secondary-tools" aria-labelledby="secondary-tools-title">
             <div className="section-heading secondary-heading">
-              <span>{c.secondaryLabel}</span>
-              <h2 id="secondary-tools-title">{c.secondaryTitle}</h2>
-              <p>{c.secondaryText}</p>
+              <span>{t("secondaryLabel")}</span>
+              <h2 id="secondary-tools-title">{t("secondaryTitle")}</h2>
+              <p>{t("secondaryText")}</p>
             </div>
 
-            <Card className="tool-card secondary-tool-card" aria-label={c.secondaryLabel}>
+            <Card className="tool-card secondary-tool-card" aria-label={t("secondaryLabel")}>
               <Tabs
                 value={secondaryMode}
                 onValueChange={(value) => changeMode(value as SecondaryToolMode)}
               >
-                <TabsList className="tabs secondary-tabs" aria-label={c.secondaryLabel}>
+                <TabsList className="tabs secondary-tabs" aria-label={t("secondaryLabel")}>
                   {secondaryTabs.map((tab) => {
                     const Icon = tab.icon;
                     const active = secondaryMode === tab.id;
@@ -660,12 +563,12 @@ export default function Home() {
                   {secondaryMode === "extract" && (
                     <div className="tool-panel" role="tabpanel">
                       <ToolChoice
-                        label={c.tabs[1][0]}
+                        label={t("tabs.1.0")}
                         value={extractKind}
                         disabled={busy}
                         options={[
-                          { value: "audio", label: c.audioFromVideoOption },
-                          { value: "video", label: c.videoWithoutAudioOption },
+                          { value: "audio", label: t("audioFromVideoOption") },
+                          { value: "video", label: t("videoWithoutAudioOption") },
                         ]}
                         onChange={(value) => {
                           setExtractKind(value as MediaKind);
@@ -679,8 +582,12 @@ export default function Home() {
                           {extractKind === "audio" ? <Music2 size={23} /> : <Film size={23} />}
                         </span>
                         <div>
-                          <h2>{extractKind === "audio" ? c.extractTitle : c.extractVideoTitle}</h2>
-                          <p>{extractKind === "audio" ? c.extractText : c.extractVideoText}</p>
+                          <h2>
+                            {extractKind === "audio" ? t("extractTitle") : t("extractVideoTitle")}
+                          </h2>
+                          <p>
+                            {extractKind === "audio" ? t("extractText") : t("extractVideoText")}
+                          </p>
                         </div>
                       </div>
                       {extractKind === "audio" ? (
@@ -734,12 +641,12 @@ export default function Home() {
                   {secondaryMode === "convert" && (
                     <div className="tool-panel" role="tabpanel">
                       <ToolChoice
-                        label={c.tabs[2][0]}
+                        label={t("tabs.2.0")}
                         value={convertKind}
                         disabled={busy}
                         options={[
-                          { value: "audio", label: c.audioFileOption },
-                          { value: "video", label: c.videoFileOption },
+                          { value: "audio", label: t("audioFileOption") },
+                          { value: "video", label: t("videoFileOption") },
                         ]}
                         onChange={(value) => {
                           setConvertKind(value as MediaKind);
@@ -757,8 +664,12 @@ export default function Home() {
                           )}
                         </span>
                         <div>
-                          <h2>{convertKind === "audio" ? c.convertTitle : c.convertVideoTitle}</h2>
-                          <p>{convertKind === "audio" ? c.convertText : c.convertVideoText}</p>
+                          <h2>
+                            {convertKind === "audio" ? t("convertTitle") : t("convertVideoTitle")}
+                          </h2>
+                          <p>
+                            {convertKind === "audio" ? t("convertText") : t("convertVideoText")}
+                          </p>
                         </div>
                       </div>
                       {convertKind === "audio" ? (
@@ -818,40 +729,40 @@ export default function Home() {
                     {mode === secondaryMode && status === "working" ? (
                       <>
                         <RefreshCw size={19} className="spin" />{" "}
-                        {downloadStage === "downloading" ? c.downloading : c.working}
+                        {downloadStage === "downloading" ? t("downloading") : t("working")}
                         {downloadStage === "preparing" && ` ${processProgress}%`}
                       </>
                     ) : mode === secondaryMode && status === "done" ? (
                       <>
-                        <Check size={20} /> {c.done}
+                        <Check size={20} /> {t("done")}
                       </>
                     ) : secondaryMode === "extract" ? (
                       extractKind === "audio" ? (
                         <>
-                          <Music2 size={20} /> {c.extractCta} {format}
+                          <Music2 size={20} /> {t("extractCta")} {format}
                         </>
                       ) : (
                         <>
-                          <Film size={20} /> {c.extractVideoCta} {videoFormat}
+                          <Film size={20} /> {t("extractVideoCta")} {videoFormat}
                         </>
                       )
                     ) : convertKind === "video" ? (
                       <>
-                        <Clapperboard size={20} /> {c.convertVideoCta} {videoFormat}
+                        <Clapperboard size={20} /> {t("convertVideoCta")} {videoFormat}
                       </>
                     ) : (
                       <>
-                        <RefreshCw size={20} /> {c.convertCta} {format}
+                        <RefreshCw size={20} /> {t("convertCta")} {format}
                       </>
                     )}
                   </Button>
 
                   {mode === secondaryMode && status === "error" && (
-                    <p className="process-error">{c.error}</p>
+                    <p className="process-error">{t("error")}</p>
                   )}
 
                   <p className="legal-line">
-                    {c.legalA} <Link href="/terms">{c.terms}</Link> {c.legalB}
+                    {t("legalA")} <Link href="/terms">{t("terms")}</Link> {t("legalB")}
                   </p>
                 </div>
               </Tabs>
@@ -860,11 +771,11 @@ export default function Home() {
 
           <section className="info-section" id="como-funciona">
             <div className="section-heading">
-              <span>{c.how}</span>
-              <h2>{c.howTitle}</h2>
+              <span>{t("how")}</span>
+              <h2>{t("howTitle")}</h2>
             </div>
             <div className="steps-grid">
-              {c.steps.map((step, index) => (
+              {(t.raw("steps") as [string, string][]).map((step, index) => (
                 <article key={step[0]}>
                   <span>0{index + 1}</span>
                   <h3>{step[0]}</h3>
@@ -876,12 +787,12 @@ export default function Home() {
 
           <section className="info-section solutions-section" aria-labelledby="solutions-title">
             <div className="section-heading">
-              <span>{c.solutionsLabel}</span>
-              <h2 id="solutions-title">{c.solutionsTitle}</h2>
-              <p>{c.formatsText}</p>
+              <span>{t("solutionsLabel")}</span>
+              <h2 id="solutions-title">{t("solutionsTitle")}</h2>
+              <p>{t("formatsText")}</p>
             </div>
             <div className="solutions-grid">
-              {c.solutions.map((solution, index) => (
+              {(t.raw("solutions") as [string, string][]).map((solution, index) => (
                 <article key={solution[0]}>
                   <span>0{index + 1}</span>
                   <div>
@@ -895,11 +806,11 @@ export default function Home() {
 
           <section className="format-section" id="formatos" aria-labelledby="formats-title">
             <div>
-              <span className="section-kicker">{c.formats}</span>
-              <h2 id="formats-title">{c.formatsTitle}</h2>
-              <p>{c.formatsText}</p>
+              <span className="section-kicker">{t("formats")}</span>
+              <h2 id="formats-title">{t("formatsTitle")}</h2>
+              <p>{t("formatsText")}</p>
             </div>
-            <div className="format-cloud" aria-label={c.formatsTitle}>
+            <div className="format-cloud" aria-label={t("formatsTitle")}>
               {[...videoFormats, ...audioFormats].map((supportedFormat) => (
                 <span key={supportedFormat}>{supportedFormat}</span>
               ))}
@@ -913,21 +824,21 @@ export default function Home() {
           >
             <ShieldCheck size={28} aria-hidden="true" />
             <div>
-              <h2 id="responsible-title">{c.responsibleTitle}</h2>
-              <p>{c.responsibleText}</p>
+              <h2 id="responsible-title">{t("responsibleTitle")}</h2>
+              <p>{t("responsibleText")}</p>
             </div>
             <Link href="/copyright">
-              {c.guidelines} <ArrowRight size={15} aria-hidden="true" />
+              {t("guidelines")} <ArrowRight size={15} aria-hidden="true" />
             </Link>
           </section>
 
           <section className="info-section faq-section" id="faq" aria-labelledby="faq-title">
             <div className="section-heading">
-              <span>{c.faqLabel}</span>
-              <h2 id="faq-title">{c.faqTitle}</h2>
+              <span>{t("faqLabel")}</span>
+              <h2 id="faq-title">{t("faqTitle")}</h2>
             </div>
             <div className="faq-list">
-              {c.faqs.map((faq) => (
+              {(t.raw("faqs") as [string, string][]).map((faq) => (
                 <details key={faq[0]}>
                   <summary>{faq[0]}</summary>
                   <p>{faq[1]}</p>
@@ -942,15 +853,15 @@ export default function Home() {
         <div className="footer-inner">
           <div>
             <Brand />
-            <p>{c.footerText}</p>
+            <p>{t("footerText")}</p>
           </div>
           <nav aria-label="Links legais">
-            <Link href="/terms">{c.terms}</Link>
-            <Link href="/privacy">{c.privacy}</Link>
-            <Link href="/copyright">{c.copyright}</Link>
+            <Link href="/terms">{t("terms")}</Link>
+            <Link href="/privacy">{t("privacy")}</Link>
+            <Link href="/copyright">{t("copyright")}</Link>
           </nav>
           <small>
-            © {new Date().getFullYear()} Baixaboo. {c.footerLegal}
+            © {new Date().getFullYear()} Baixaboo. {t("footerLegal")}
           </small>
         </div>
       </footer>
