@@ -11,11 +11,13 @@ export function LegalPageShell({
   title,
   updatedAt,
   intro,
+  eyebrow,
   children,
 }: {
   title: string;
   updatedAt: string;
   intro: string;
+  eyebrow?: string;
   children: ReactNode;
 }) {
   const t = useTranslations("LegalShell");
@@ -71,7 +73,7 @@ export function LegalPageShell({
 
       <main className="legal-layout">
         <aside className="legal-title">
-          <span>{t("eyebrow")}</span>
+          <span>{eyebrow ?? t("eyebrow")}</span>
           <h1>{title}</h1>
           <p>{intro}</p>
           <small>{t("lastUpdated", { date: updatedAt })}</small>
@@ -85,6 +87,8 @@ export function LegalPageShell({
               <Link href="/terms">{t("terms")}</Link>
               <Link href="/privacy">{t("privacy")}</Link>
               <Link href="/copyright">{t("copyright")}</Link>
+              <Link href="/about">{t("about")}</Link>
+              <Link href="/contact">{t("contact")}</Link>
             </nav>
           </footer>
         </article>
@@ -93,9 +97,17 @@ export function LegalPageShell({
   );
 }
 
-export function LegalSection({ heading, children }: { heading: string; children: ReactNode }) {
+export function LegalSection({
+  id,
+  heading,
+  children,
+}: {
+  id?: string;
+  heading: string;
+  children: ReactNode;
+}) {
   return (
-    <section>
+    <section id={id}>
       <h2>{heading}</h2>
       {children}
     </section>

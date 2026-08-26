@@ -856,9 +856,11 @@ export default function Home() {
             <p>{t("footerText")}</p>
           </div>
           <nav aria-label="Links legais">
+            <Link href="/about">{t("about")}</Link>
             <Link href="/terms">{t("terms")}</Link>
             <Link href="/privacy">{t("privacy")}</Link>
             <Link href="/copyright">{t("copyright")}</Link>
+            <Link href="/contact">{t("contact")}</Link>
           </nav>
           <small>
             © {new Date().getFullYear()} Baixaboo. {t("footerLegal")}

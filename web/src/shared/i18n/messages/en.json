@@ -8,6 +8,10 @@
     "privacyDescription": "How Baixaboo handles data, submitted links, local preferences, and data-subject rights.",
     "termsTitle": "Terms of Use",
     "termsDescription": "Baixaboo terms of use, user responsibilities, prohibited uses, and limitations of liability.",
+    "aboutTitle": "About Baixaboo",
+    "aboutDescription": "Learn about Baixaboo's purpose, operation, and transparency commitments.",
+    "contactTitle": "Contact",
+    "contactDescription": "Contact Baixaboo for support, privacy requests, and copyright notices.",
     "languageTag": "en",
     "openGraphLocale": "en_US",
     "alternateOpenGraphLocale": "pt_BR",
@@ -44,6 +48,7 @@
     "openMenu": "Open menu",
     "nav": {
       "home": "Home",
+      "about": "About",
       "howItWorks": "How it works",
       "formats": "Formats",
       "platforms": "Supported platforms",
@@ -54,10 +59,10 @@
     "slogan": "Convert. Choose. Download."
   },
   "Footer": {
-    "description": "Baixaboo is an online tool for forwarding downloads of owned, licensed, or authorized content without storing files on the server.",
+    "description": "Baixaboo is an online tool for processing owned, licensed, or authorized content, with temporary retention limited to task execution and delivery.",
     "linksLabel": "Footer links",
     "independent": "Baixaboo is an independent tool and is not affiliated with, partnered with, sponsored by, or endorsed by YouTube, Google, or any other supported platform.",
-    "legalIdentity": "[COMPANY OR RESPONSIBLE PARTY] · [REGISTRATION OR IDENTIFICATION]",
+    "legalIdentity": "Independent Brazilian project",
     "links": {
       "home": "Home",
       "formats": "Formats",
@@ -80,7 +85,9 @@
     "legalLinksLabel": "Legal links",
     "terms": "Terms",
     "privacy": "Privacy",
-    "copyright": "Copyright"
+    "copyright": "Copyright",
+    "about": "About",
+    "contact": "Contact"
   },
   "HomePage": {
     "nav": ["How it works", "Formats", "Responsible use", "Frequently asked questions"],
@@ -219,6 +226,8 @@
       ]
     ],
     "footerText": "Simple tools for working with your own media.",
+    "about": "About",
+    "contact": "Contact",
     "privacy": "Privacy",
     "copyright": "Copyright",
     "footerLegal": "Independent service, not affiliated with YouTube or Google."
@@ -479,7 +488,7 @@
   },
   "CopyrightPage": {
     "title": "Copyright and DMCA",
-    "updated": "February 2026",
+    "updated": "August 2026",
     "intro": "Baixaboo respects authors' and rights holders' rights. We do not host or distribute third-party content: we process only links submitted by users, who are responsible for lawful use.",
     "allowedTitle": "Permitted use",
     "allowed": {
@@ -505,40 +514,64 @@
       "3": "a good-faith statement that the use is unauthorized;",
       "4": "a statement that the information provided is accurate."
     },
-    "noticeEnd": "Valid notices are reviewed as a priority and may result in technical source blocking or suspension of access for repeat infringers."
+    "noticeEnd": "Valid notices are reviewed as a priority and may result in technical source blocking or suspension of access for repeat infringers.",
+    "noticeContact": "Send the notice to"
   },
   "PrivacyPage": {
     "title": "Privacy Policy",
-    "updated": "February 2026",
+    "updated": "August 2026",
     "intro": "This Policy explains which data Baixaboo processes, for what purposes, and for how long, in accordance with applicable Brazilian data-protection law.",
     "sections": {
       "data": {
         "title": "1. Data we process",
         "items": {
           "0": "Media links voluntarily submitted by the user for validation and download;",
-          "1": "Technical access data, such as IP address, device type, browser, and language;",
-          "2": "Preferences saved locally on your device, such as the interface theme;",
-          "3": "No media files: Baixaboo does not save copies or create temporary files."
+          "1": "Files uploaded for extraction or conversion and files prepared for delivery, processed temporarily while the task is running;",
+          "2": "Technical access and security data, such as IP address, date and time, device type, browser, language, and error logs;",
+          "3": "A random session identifier, protected by a signature and stored in an HttpOnly cookie, used to associate a task with the browser and enforce usage limits;",
+          "4": "Preferences saved locally on the device, such as theme and language;",
+          "5": "Usage data, identifiers, and events collected by measurement and advertising services when applicable and according to the user's privacy choices."
         }
       },
       "purposes": {
         "title": "2. Purposes",
         "items": {
-          "0": "Validate the link and forward the requested download directly to the browser;",
-          "1": "Maintain security, prevent abuse, and limit automated usage;",
-          "2": "Measure performance and improve the platform experience."
+          "0": "Receive the request, prepare the media, and deliver the file to the browser;",
+          "1": "Keep a task session available after a page refresh;",
+          "2": "Maintain security, prevent abuse, investigate failures, and limit automated usage;",
+          "3": "Measure performance and improve the platform experience;",
+          "4": "Display, measure, and limit ad repetition when Google AdSense is active."
         }
       },
       "retention": {
         "title": "3. Files and retention",
-        "text": "Baixaboo does not store media files, create queues, or use a database for downloads. Content is streamed from the source to the browser during the request and stops being processed when the connection closes."
+        "text": "Baixaboo does not maintain a permanent media library or media database. To prepare downloads, playlists, extractions, and conversions, media may be written to isolated temporary directories. Ready files normally expire within 15 minutes if not downloaded and are removed a few minutes after delivery; active transfers and long-running tasks have technical limits of up to 6 and 12 hours. Remaining directories are also cleaned automatically after failures or service restarts."
       },
       "sharing": {
         "title": "4. Sharing",
-        "text": "We do not sell personal data. Data is shared only with infrastructure and measurement providers strictly necessary for operation, limited to the stated purpose, or when required by a competent authority."
+        "text": "We do not sell personal data. Technical data may be processed by hosting, network, and security providers required to operate the service, by Microsoft Clarity for usage measurement, and by Google and advertising partners when AdSense is active. We may also disclose data when required by law or a competent authority."
+      },
+      "cookies": {
+        "title": "5. Cookies, local storage, and advertising",
+        "text": "Baixaboo uses essential technologies and, when enabled, optional measurement and advertising technologies:",
+        "items": {
+          "0": "baixaboo_session: an essential, signed, HttpOnly cookie with a maximum lifetime of 30 days; it contains no name, email address, or login;",
+          "1": "Local storage: stores preferences such as theme and minimal information required to resume an active task;",
+          "2": "Microsoft Clarity: may measure interactions, performance, and sessions through analytics cookies and identifiers;",
+          "3": "Google AdSense and partners: may use cookies, web beacons, IP addresses, and other identifiers to serve, personalize, and measure ads based on this visit and earlier visits."
+        },
+        "choices": "You can control personalized ads and learn how these providers process data through",
+        "adsSettings": "Google Ads Settings",
+        "separator": ", ",
+        "googleData": "How Google uses data on partner sites",
+        "microsoftPrivacy": "Microsoft Privacy Statement"
+      },
+      "legalBases": {
+        "title": "6. Legal bases",
+        "text": "Depending on the purpose, processing takes place to perform the requested service, comply with legal obligations, protect the platform and its users based on legitimate interests, or, where required, with consent. Consent can be withdrawn without affecting prior lawful processing."
       },
       "rights": {
-        "title": "5. Your rights",
+        "title": "7. Your rights",
         "items": {
           "0": "Confirmation of processing and access to data;",
           "1": "Correction of incomplete, inaccurate, or outdated data;",
@@ -549,19 +582,31 @@
         "text": "Requests can be sent through the contact channel listed in the footer and will be answered within applicable legal deadlines."
       },
       "security": {
-        "title": "6. Security",
+        "title": "8. Security",
         "text": "We use reasonable technical and organizational measures to protect processed data. No system is completely immune to incidents, and we will report relevant events as required by law."
+      },
+      "transfers": {
+        "title": "9. International transfers",
+        "text": "Infrastructure, measurement, and advertising providers may process data outside Brazil. In those cases, we seek providers offering contractual and technical safeguards consistent with applicable law."
+      },
+      "children": {
+        "title": "10. Children and teenagers",
+        "text": "Baixaboo is not directed to children and does not intentionally request personal data from minors. If you believe a minor has improperly provided personal data, contact us so we can review and remove it."
+      },
+      "contact": {
+        "title": "11. Privacy contact",
+        "text": "To exercise your rights, ask a question, or report a privacy incident, write to"
       }
     }
   },
   "TermsPage": {
     "title": "Terms of Use",
-    "updated": "February 2026",
+    "updated": "August 2026",
     "intro": "These Terms govern the use of Baixaboo, a technical direct-media-download tool. By using the platform, you fully agree to the conditions below.",
     "sections": {
       "service": {
         "title": "1. Nature of the service",
-        "text": "Baixaboo is a technical tool that validates media links provided by users and forwards downloads as a stream. The platform does not host, index, catalog, store, or provide third-party content and grants no rights to that content."
+        "text": "Baixaboo is a technical tool that validates media links submitted by users and prepares files for delivery. The platform does not maintain a catalog or permanent library of third-party content; temporary files exist only for the technical period required for processing and transfer. Baixaboo grants no rights to that content."
       },
       "responsibility": {
         "title": "2. User responsibility",
@@ -603,6 +648,71 @@
       "changes": {
         "title": "8. Changes and applicable law",
         "text": "These Terms may be updated at any time and take effect when published on this page. Brazilian law applies, including copyright, internet, and data-protection legislation."
+      }
+    }
+  },
+  "AboutPage": {
+    "eyebrow": "ABOUT BAIXABOO",
+    "title": "Media tools with a direct experience",
+    "updated": "August 2026",
+    "intro": "Baixaboo is an independent project created to bring common media tasks together in a simple, accessible, and transparent interface.",
+    "sections": {
+      "purpose": {
+        "title": "Our purpose",
+        "text": "We want to remove unnecessary steps for people working with their own media: preparing an authorized file from a link, extracting an audio track, removing audio from a video, or converting a file to a compatible format."
+      },
+      "operation": {
+        "title": "How the service works",
+        "text": "The browser sends only the data required for the selected task. The backend validates the request, processes it in temporary storage, and delivers the result to the user. We do not create a public library, index submitted links, or require user accounts."
+      },
+      "principles": {
+        "title": "Project commitments",
+        "items": {
+          "0": "Clearly explain what is processed and for how long;",
+          "1": "Collect only data needed for operation, security, measurement, and disclosed advertising;",
+          "2": "Maintain accessible navigation on mobile and desktop devices;",
+          "3": "Respond to privacy, support, and copyright requests through a public contact channel."
+        }
+      },
+      "independence": {
+        "title": "Independence and responsible use",
+        "text": "Baixaboo is not affiliated with, sponsored by, or endorsed by YouTube, Google, or other mentioned platforms. Users must process only their own, public-domain, licensed, or expressly authorized content and comply with applicable law and source terms."
+      },
+      "funding": {
+        "title": "How the project is funded",
+        "text": "Operations may be funded by clearly identified advertising. Ads do not alter tool results, are never presented as download buttons, and do not waive privacy or responsible-use requirements."
+      }
+    }
+  },
+  "ContactPage": {
+    "eyebrow": "CONTACT & TRANSPARENCY",
+    "title": "Contact Baixaboo",
+    "updated": "August 2026",
+    "intro": "Use this channel for support, privacy, security, or copyright notices. Include only the information needed to review your request.",
+    "sections": {
+      "general": {
+        "title": "General support",
+        "text": "For questions, technical issues, or suggestions, write to"
+      },
+      "copyright": {
+        "title": "Copyright and removal requests",
+        "text": "For a notice to be reviewed, include:",
+        "items": {
+          "0": "your name and contact details;",
+          "1": "identification of the work or right allegedly infringed;",
+          "2": "the exact address of the related content or source;",
+          "3": "a good-faith statement that the use was not authorized;",
+          "4": "a statement that the submitted information is accurate."
+        },
+        "sendTo": "Send the notice to"
+      },
+      "privacy": {
+        "title": "Privacy and security",
+        "text": "To exercise data-protection rights or report a possible incident, write to"
+      },
+      "response": {
+        "title": "Response time",
+        "text": "Messages are reviewed in the order received. Urgent matters and complete copyright notices receive priority, and applicable statutory deadlines will be observed."
       }
     }
   }

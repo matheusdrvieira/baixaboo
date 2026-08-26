@@ -1250,6 +1250,19 @@ a {
 .legal-content p {
   margin: 0;
 }
+.legal-content p + p {
+  margin-top: 12px;
+}
+.legal-content a {
+  color: var(--brand);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  text-underline-offset: 3px;
+}
+.legal-content a:hover {
+  text-decoration-color: currentColor;
+}
 .legal-content ul {
   margin: 0;
   padding-left: 18px;

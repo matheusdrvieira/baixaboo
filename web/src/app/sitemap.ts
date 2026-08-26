@@ -4,6 +4,8 @@ import { routing } from "@/shared/i18n/routing";
 
 const pages = [
   { path: "", changeFrequency: "weekly" as const, priority: 1 },
+  { path: "/about", changeFrequency: "yearly" as const, priority: 0.5 },
+  { path: "/contact", changeFrequency: "yearly" as const, priority: 0.4 },
   { path: "/terms", changeFrequency: "yearly" as const, priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly" as const, priority: 0.3 },
   { path: "/copyright", changeFrequency: "yearly" as const, priority: 0.3 },

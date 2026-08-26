@@ -8,6 +8,10 @@
     "privacyDescription": "Como a Baixaboo trata dados, links enviados, preferências locais e direitos do titular sob a LGPD.",
     "termsTitle": "Termos de Uso",
     "termsDescription": "Condições de uso da Baixaboo, responsabilidades do usuário, usos proibidos e limitações de responsabilidade.",
+    "aboutTitle": "Sobre a Baixaboo",
+    "aboutDescription": "Conheça o propósito, o funcionamento e os compromissos de transparência da Baixaboo.",
+    "contactTitle": "Contato",
+    "contactDescription": "Canal de contato da Baixaboo para suporte, privacidade e notificações de direitos autorais.",
     "languageTag": "pt-BR",
     "openGraphLocale": "pt_BR",
     "alternateOpenGraphLocale": "en_US",
@@ -44,6 +48,7 @@
     "openMenu": "Abrir menu",
     "nav": {
       "home": "Início",
+      "about": "Sobre",
       "howItWorks": "Como funciona",
       "formats": "Formatos",
       "platforms": "Plataformas compatíveis",
@@ -54,10 +59,10 @@
     "slogan": "Converta. Escolha. Baixe."
   },
   "Footer": {
-    "description": "Baixaboo é uma ferramenta online para encaminhar downloads de conteúdos próprios, licenciados ou autorizados, sem manter arquivos no servidor.",
+    "description": "Baixaboo é uma ferramenta online para processar conteúdos próprios, licenciados ou autorizados, com retenção temporária limitada à execução e entrega da tarefa.",
     "linksLabel": "Links do rodapé",
     "independent": "Baixaboo é uma ferramenta independente e não possui vínculo, parceria, patrocínio ou aprovação do YouTube, Google ou das demais plataformas compatíveis.",
-    "legalIdentity": "[RAZÃO SOCIAL OU RESPONSÁVEL] · [CNPJ OU IDENTIFICAÇÃO]",
+    "legalIdentity": "Projeto independente brasileiro",
     "links": {
       "home": "Início",
       "formats": "Formatos",
@@ -80,7 +85,9 @@
     "legalLinksLabel": "Links legais",
     "terms": "Termos",
     "privacy": "Privacidade",
-    "copyright": "Direitos Autorais"
+    "copyright": "Direitos Autorais",
+    "about": "Sobre",
+    "contact": "Contato"
   },
   "HomePage": {
     "nav": ["Como funciona", "Formatos", "Uso responsável", "Perguntas frequentes"],
@@ -219,6 +226,8 @@
       ]
     ],
     "footerText": "Ferramentas simples para trabalhar com sua própria mídia.",
+    "about": "Sobre",
+    "contact": "Contato",
     "privacy": "Privacidade",
     "copyright": "Direitos Autorais",
     "footerLegal": "Serviço independente, sem vínculo com YouTube ou Google."
@@ -479,7 +488,7 @@
   },
   "CopyrightPage": {
     "title": "Direitos Autorais e DMCA",
-    "updated": "fevereiro de 2026",
+    "updated": "agosto de 2026",
     "intro": "A Baixaboo respeita os direitos de autores e titulares. Não hospedamos nem distribuímos conteúdo de terceiros: processamos apenas links informados pelo próprio usuário, que é responsável pela legalidade do uso.",
     "allowedTitle": "Uso permitido",
     "allowed": {
@@ -505,40 +514,64 @@
       "3": "declaração de boa-fé de que o uso não é autorizado;",
       "4": "declaração de veracidade das informações prestadas."
     },
-    "noticeEnd": "Notificações válidas são analisadas com prioridade e podem resultar em bloqueio técnico de fontes ou suspensão do acesso de usuários infratores."
+    "noticeEnd": "Notificações válidas são analisadas com prioridade e podem resultar em bloqueio técnico de fontes ou suspensão do acesso de usuários infratores.",
+    "noticeContact": "Envie a notificação para"
   },
   "PrivacyPage": {
     "title": "Política de Privacidade",
-    "updated": "fevereiro de 2026",
+    "updated": "agosto de 2026",
     "intro": "Esta Política explica quais dados a Baixaboo trata, com quais finalidades e por quanto tempo, em conformidade com a LGPD (Lei nº 13.709/2018).",
     "sections": {
       "data": {
         "title": "1. Dados tratados",
         "items": {
           "0": "Links de mídia enviados voluntariamente pelo usuário para validação e download;",
-          "1": "Dados técnicos de acesso, como endereço IP, tipo de dispositivo, navegador e idioma;",
-          "2": "Preferências salvas localmente no seu dispositivo, como o tema da interface;",
-          "3": "Nenhum arquivo de mídia: a Baixaboo não grava cópias nem cria arquivos temporários."
+          "1": "Arquivos enviados para extração ou conversão e arquivos preparados para entrega, tratados temporariamente durante a tarefa;",
+          "2": "Dados técnicos de acesso e segurança, como endereço IP, data e hora, tipo de dispositivo, navegador, idioma e registros de erro;",
+          "3": "Um identificador aleatório de sessão, protegido por assinatura e salvo em cookie HttpOnly, usado para associar a tarefa ao navegador e aplicar limites de uso;",
+          "4": "Preferências salvas localmente no dispositivo, como tema e idioma;",
+          "5": "Dados de uso, identificadores e eventos coletados por serviços de medição e publicidade, quando aplicável e conforme as escolhas de privacidade do usuário."
         }
       },
       "purposes": {
         "title": "2. Finalidades",
         "items": {
-          "0": "Validar o link e encaminhar o download solicitado diretamente ao navegador;",
-          "1": "Garantir segurança, prevenir abusos e limitar uso automatizado;",
-          "2": "Medir desempenho e melhorar a experiência da plataforma."
+          "0": "Receber a solicitação, preparar a mídia e entregar o arquivo ao navegador;",
+          "1": "Manter a sessão da tarefa após recarregamentos da página;",
+          "2": "Garantir segurança, prevenir abusos, investigar falhas e limitar uso automatizado;",
+          "3": "Medir desempenho e melhorar a experiência da plataforma;",
+          "4": "Exibir, medir e limitar a repetição de anúncios, quando o Google AdSense estiver ativo."
         }
       },
       "retention": {
         "title": "3. Arquivos e retenção",
-        "text": "A Baixaboo não armazena arquivos de mídia, não cria filas e não usa banco de dados para downloads. O conteúdo é encaminhado em streaming da fonte ao navegador durante a solicitação e deixa de ser tratado quando a conexão é encerrada."
+        "text": "A Baixaboo não mantém biblioteca permanente nem banco de dados de arquivos. Para preparar downloads, playlists, extrações e conversões, a mídia pode ser gravada em diretórios temporários isolados. Arquivos prontos expiram normalmente em até 15 minutos se não forem baixados e são removidos poucos minutos após a entrega; transferências em andamento e tarefas longas possuem limites técnicos de até 6 e 12 horas. Diretórios remanescentes também são limpos automaticamente em caso de falha ou reinício do serviço."
       },
       "sharing": {
         "title": "4. Compartilhamento",
-        "text": "Não vendemos dados pessoais. O compartilhamento ocorre apenas com fornecedores de infraestrutura e medição estritamente necessários à operação, sempre limitado à finalidade informada, ou quando exigido por autoridade competente."
+        "text": "Não vendemos dados pessoais. Dados técnicos podem ser tratados por provedores de hospedagem, rede e segurança necessários à operação, pelo Microsoft Clarity para medição de uso e pelo Google e parceiros de publicidade quando o AdSense estiver ativo. Também poderemos compartilhar dados quando exigido por lei ou autoridade competente."
+      },
+      "cookies": {
+        "title": "5. Cookies, armazenamento local e publicidade",
+        "text": "A Baixaboo utiliza tecnologias essenciais e, quando habilitadas, tecnologias opcionais de medição e publicidade:",
+        "items": {
+          "0": "baixaboo_session: cookie essencial, HttpOnly e assinado, com validade máxima de 30 dias; não contém nome, e-mail ou login;",
+          "1": "Armazenamento local: guarda preferências como tema e dados mínimos para retomar uma tarefa em andamento;",
+          "2": "Microsoft Clarity: pode medir interações, desempenho e sessões por meio de identificadores e cookies de análise;",
+          "3": "Google AdSense e parceiros: podem usar cookies, web beacons, endereço IP e outros identificadores para veicular, personalizar e medir anúncios com base nesta visita e em visitas anteriores."
+        },
+        "choices": "Você pode controlar anúncios personalizados e consultar como esses fornecedores tratam dados em",
+        "adsSettings": "Configurações de anúncios do Google",
+        "separator": ", ",
+        "googleData": "Como o Google usa dados em sites parceiros",
+        "microsoftPrivacy": "Política de Privacidade da Microsoft"
+      },
+      "legalBases": {
+        "title": "6. Bases legais",
+        "text": "Conforme a finalidade, o tratamento ocorre para executar o serviço solicitado, cumprir obrigações legais, proteger a plataforma e seus usuários com base em legítimo interesse ou, quando exigido, mediante consentimento. O consentimento pode ser retirado sem afetar tratamentos anteriores legítimos."
       },
       "rights": {
-        "title": "5. Direitos do titular",
+        "title": "7. Direitos do titular",
         "items": {
           "0": "Confirmação da existência de tratamento e acesso aos dados;",
           "1": "Correção de dados incompletos, inexatos ou desatualizados;",
@@ -549,19 +582,31 @@
         "text": "Solicitações podem ser enviadas pelo canal de contato indicado no rodapé, com resposta nos prazos legais."
       },
       "security": {
-        "title": "6. Segurança",
+        "title": "8. Segurança",
         "text": "Adotamos medidas técnicas e organizacionais razoáveis para proteger os dados tratados. Nenhum sistema é completamente imune a incidentes, e comunicaremos eventos relevantes conforme exigido pela legislação."
+      },
+      "transfers": {
+        "title": "9. Transferências internacionais",
+        "text": "Fornecedores de infraestrutura, medição e publicidade podem processar dados fora do Brasil. Nesses casos, buscamos utilizar fornecedores que ofereçam salvaguardas contratuais e técnicas compatíveis com a legislação aplicável."
+      },
+      "children": {
+        "title": "10. Crianças e adolescentes",
+        "text": "A Baixaboo não é direcionada a crianças e não solicita intencionalmente dados pessoais de menores. Se você acreditar que um menor forneceu dados pessoais indevidamente, entre em contato para análise e remoção."
+      },
+      "contact": {
+        "title": "11. Contato sobre privacidade",
+        "text": "Para exercer direitos, tirar dúvidas ou comunicar um incidente de privacidade, escreva para"
       }
     }
   },
   "TermsPage": {
     "title": "Termos de Uso",
-    "updated": "fevereiro de 2026",
+    "updated": "agosto de 2026",
     "intro": "Estes Termos regulam o uso da Baixaboo, uma ferramenta técnica de download direto de mídia. Ao utilizar a plataforma, você declara concordar integralmente com as condições abaixo.",
     "sections": {
       "service": {
         "title": "1. Natureza do serviço",
-        "text": "A Baixaboo é uma ferramenta técnica que valida links de mídia fornecidos pelo usuário e encaminha o download em streaming. A plataforma não hospeda, indexa, cataloga, armazena ou disponibiliza conteúdo de terceiros, e não concede qualquer direito sobre o conteúdo."
+        "text": "A Baixaboo é uma ferramenta técnica que valida links de mídia fornecidos pelo usuário e prepara arquivos para entrega. A plataforma não mantém catálogo ou biblioteca permanente de conteúdo de terceiros; arquivos temporários existem apenas pelo período técnico necessário ao processamento e à transferência. A Baixaboo não concede qualquer direito sobre o conteúdo."
       },
       "responsibility": {
         "title": "2. Responsabilidade do usuário",
@@ -603,6 +648,71 @@
       "changes": {
         "title": "8. Alterações e legislação aplicável",
         "text": "Estes Termos podem ser atualizados a qualquer momento, com efeitos a partir da publicação nesta página. Aplica-se a legislação brasileira, incluindo a Lei nº 9.610/1998 (Direitos Autorais), o Marco Civil da Internet e a LGPD."
+      }
+    }
+  },
+  "AboutPage": {
+    "eyebrow": "SOBRE A BAIXABOO",
+    "title": "Ferramentas de mídia com uma experiência direta",
+    "updated": "agosto de 2026",
+    "intro": "A Baixaboo é um projeto independente criado para reunir tarefas de mídia frequentes em uma interface simples, acessível e transparente.",
+    "sections": {
+      "purpose": {
+        "title": "Nosso propósito",
+        "text": "Queremos reduzir etapas desnecessárias para quem precisa trabalhar com sua própria mídia: preparar um arquivo autorizado a partir de um link, extrair uma faixa de áudio, remover o áudio de um vídeo ou converter um arquivo para um formato compatível."
+      },
+      "operation": {
+        "title": "Como o serviço funciona",
+        "text": "O navegador envia apenas os dados necessários para a tarefa escolhida. O backend valida a solicitação, executa o processamento em ambiente temporário e entrega o resultado ao usuário. Não criamos uma biblioteca pública, não indexamos os links enviados e não exigimos conta de usuário."
+      },
+      "principles": {
+        "title": "Compromissos do projeto",
+        "items": {
+          "0": "Explicar com clareza o que é processado e por quanto tempo;",
+          "1": "Coletar apenas os dados necessários para operação, segurança, medição e publicidade declarada;",
+          "2": "Manter navegação acessível em dispositivos móveis e desktop;",
+          "3": "Responder a solicitações de privacidade, suporte e direitos autorais por um canal público."
+        }
+      },
+      "independence": {
+        "title": "Independência e uso responsável",
+        "text": "A Baixaboo não possui vínculo, patrocínio ou aprovação do YouTube, Google ou de outras plataformas citadas. O usuário deve utilizar apenas conteúdo próprio, em domínio público, licenciado ou expressamente autorizado, respeitando a legislação e os termos da fonte."
+      },
+      "funding": {
+        "title": "Como o projeto é financiado",
+        "text": "A operação poderá ser financiada por publicidade claramente identificada. Anúncios não alteram os resultados das ferramentas, não transformam anúncios em botões de download e não dispensam o cumprimento das regras de privacidade e uso responsável."
+      }
+    }
+  },
+  "ContactPage": {
+    "eyebrow": "CONTATO E TRANSPARÊNCIA",
+    "title": "Fale com a Baixaboo",
+    "updated": "agosto de 2026",
+    "intro": "Use este canal para suporte, privacidade, segurança ou notificações de direitos autorais. Inclua somente os dados necessários para analisarmos a solicitação.",
+    "sections": {
+      "general": {
+        "title": "Atendimento geral",
+        "text": "Para dúvidas, falhas técnicas ou sugestões, escreva para"
+      },
+      "copyright": {
+        "title": "Direitos autorais e solicitações de remoção",
+        "text": "Para que uma notificação possa ser analisada, informe:",
+        "items": {
+          "0": "seu nome e um meio de contato;",
+          "1": "a identificação da obra ou do direito alegadamente violado;",
+          "2": "o endereço exato do conteúdo ou da fonte relacionada;",
+          "3": "uma declaração de boa-fé de que o uso não foi autorizado;",
+          "4": "uma declaração de que as informações enviadas são verdadeiras."
+        },
+        "sendTo": "Envie a notificação para"
+      },
+      "privacy": {
+        "title": "Privacidade e segurança",
+        "text": "Para exercer direitos previstos na LGPD ou comunicar um possível incidente, escreva para"
+      },
+      "response": {
+        "title": "Prazo de resposta",
+        "text": "As mensagens são analisadas por ordem de chegada. Solicitações urgentes e notificações completas de direitos autorais recebem prioridade; prazos legais aplicáveis serão respeitados."
       }
     }
   }

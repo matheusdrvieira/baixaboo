@@ -7,14 +7,14 @@ import { Button } from "@/shared/components/ui/button";
 
 const LINKS: ReadonlyArray<{ key: string; to: string; hash?: string }> = [
   { key: "links.home", to: "/" },
+  { key: "links.about", to: "/about" },
   { key: "links.formats", to: "/", hash: "formatos" },
   { key: "links.howItWorks", to: "/", hash: "como-funciona" },
   { key: "links.terms", to: "/terms" },
   { key: "links.privacy", to: "/privacy" },
   { key: "links.copyright", to: "/copyright" },
-  { key: "links.removal", to: "/copyright", hash: "denuncia" },
-  { key: "links.contact", to: "/copyright", hash: "contato" },
-  { key: "links.status", to: "/status" },
+  { key: "links.removal", to: "/contact", hash: "copyright" },
+  { key: "links.contact", to: "/contact" },
 ];
 
 export function Footer() {

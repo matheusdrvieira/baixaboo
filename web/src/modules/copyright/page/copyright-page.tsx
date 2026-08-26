@@ -3,6 +3,7 @@ import {
   LegalPageShell,
   LegalSection,
 } from "@/shared/components/baixaboo/LegalPageShell";
+import { siteConfig } from "@/shared/config/site";
 import { useTranslations } from "next-intl";
 
 export default function CopyrightPage() {
@@ -22,6 +23,10 @@ export default function CopyrightPage() {
         <p>{t("noticeIntro")}</p>
         <LegalList items={Array.from({ length: 5 }, (_, index) => t(`noticeItems.${index}`))} />
         <p>{t("noticeEnd")}</p>
+        <p>
+          {t("noticeContact")}{" "}
+          <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>.
+        </p>
       </LegalSection>
     </LegalPageShell>
   );
