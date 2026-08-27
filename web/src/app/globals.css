@@ -499,7 +499,46 @@ a {
 .download-form .download-url-warning svg {
   flex: 0 0 auto;
 }
+.download-form .download-url-recognized {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin: 10px 0 0;
+  color: #35615a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.download-form .download-url-recognized:empty {
+  display: none;
+}
+.download-form .download-url-recognized svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #168678;
+}
+.download-form .download-url-recognized strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-weight: 600;
+}
+.download-form .download-url-recognized[data-invalid="true"],
+.download-form .download-url-recognized[data-invalid="true"] svg {
+  color: #b45309;
+}
 .dark .download-form .download-url-warning {
+  color: #fbbf24;
+}
+.dark .download-form .download-url-recognized {
+  color: #8fc9bf;
+}
+.dark .download-form .download-url-recognized svg {
+  color: #42c7b2;
+}
+.dark .download-form .download-url-recognized[data-invalid="true"],
+.dark .download-form .download-url-recognized[data-invalid="true"] svg {
   color: #fbbf24;
 }
 .dark .download-url-field[data-invalid="true"] {
@@ -1578,6 +1617,13 @@ a {
   }
   .download-form .download-url-warning {
     justify-content: flex-start;
+    margin-top: 8px;
+    text-align: left;
+    font-size: 12px;
+  }
+  .download-form .download-url-recognized {
+    justify-content: flex-start;
+    flex-wrap: wrap;
     margin-top: 8px;
     text-align: left;
     font-size: 12px;

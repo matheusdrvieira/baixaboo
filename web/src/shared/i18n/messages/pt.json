@@ -105,6 +105,8 @@
     "error": "Não foi possível processar o arquivo. Verifique a mídia e tente novamente.",
     "invalidUrl": "Informe um link público válido começando com http:// ou https://.",
     "youtubeUrlWarning": "Link não reconhecido. Use youtube.com/watch, youtu.be ou youtube.com/playlist.",
+    "recognizedUrl": "Link validado:",
+    "receivedUrl": "Link recebido:",
     "singleVideoRequired": "Este campo aceita somente links de vídeos individuais. Use a opção Playlist completa para esse link.",
     "playlistRequired": "Este campo aceita somente links de playlists do YouTube com o parâmetro list.",
     "downloadCta": "Baixar agora",
@@ -228,7 +230,7 @@
       "data": {
         "title": "1. Dados tratados",
         "items": {
-          "0": "Links de mídia enviados voluntariamente pelo usuário para validação e download;",
+          "0": "Links de mídia enviados voluntariamente pelo usuário para validação e download. O texto colado nesse campo, válido ou inválido, pode aparecer nas gravações de sessão para diagnosticar dificuldades de uso;",
           "1": "Arquivos enviados para extração ou conversão e arquivos preparados para entrega, tratados temporariamente durante a tarefa;",
           "2": "Dados técnicos de acesso e segurança, como endereço IP, data e hora, tipo de dispositivo, navegador, idioma e registros de erro;",
           "3": "Um identificador aleatório de sessão, protegido por assinatura e salvo em cookie HttpOnly, usado para associar a tarefa ao navegador e aplicar limites de uso;",
@@ -260,7 +262,7 @@
         "items": {
           "0": "baixaboo_session: cookie essencial, HttpOnly e assinado, com validade máxima de 30 dias; não contém nome, e-mail ou login;",
           "1": "Armazenamento local: guarda preferências como tema e dados mínimos para retomar uma tarefa em andamento;",
-          "2": "Microsoft Clarity: pode medir interações, desempenho e sessões por meio de identificadores e cookies de análise;",
+          "2": "Microsoft Clarity: pode medir interações, desempenho e sessões por meio de identificadores e cookies de análise. O campo de entrada permanece mascarado pelo Clarity, mas o link colado é repetido em um elemento de diagnóstico da página e pode aparecer no replay, inclusive quando for inválido;",
           "3": "Google AdSense e parceiros: podem usar cookies, web beacons, endereço IP e outros identificadores para veicular, personalizar e medir anúncios com base nesta visita e em visitas anteriores."
         },
         "choices": "Você pode controlar anúncios personalizados e consultar como esses fornecedores tratam dados em",

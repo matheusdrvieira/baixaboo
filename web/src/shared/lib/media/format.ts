@@ -36,10 +36,6 @@ type NormalizedDownloadUrl = {
 const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 const YOUTUBE_PLAYLIST_ID = /^[A-Za-z0-9_-]{10,100}$/;
 
-export function getDownloadUrlKind(raw: string): DownloadUrlKind {
-  return normalizeDownloadUrl(raw)?.kind ?? "video";
-}
-
 export function normalizeDownloadUrl(raw: string): NormalizedDownloadUrl | null {
   let parsed: URL;
   try {

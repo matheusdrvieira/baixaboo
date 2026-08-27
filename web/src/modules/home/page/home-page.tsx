@@ -15,11 +15,7 @@ import { Label } from "@/shared/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { useTheme } from "@/shared/contexts/theme";
 import { Link, usePathname, useRouter } from "@/shared/i18n/navigation";
-import {
-  getDownloadUrlKind,
-  normalizeDownloadUrl,
-  validateDownloadUrl,
-} from "@/shared/lib/media/format";
+import { normalizeDownloadUrl, validateDownloadUrl } from "@/shared/lib/media/format";
 import {
   ArrowRight,
   BadgeCheck,
@@ -107,7 +103,7 @@ function FilePicker({
         </span>
         {file ? (
           <span className="dropzone-copy">
-            <strong>{file.name}</strong>
+            <strong data-clarity-mask="true">{file.name}</strong>
             <small>
               {(file.size / 1024 / 1024).toFixed(1)} MB ·{" "}
               {disabled ? t("lockedFile") : t("changeFile")}
@@ -163,6 +159,7 @@ export default function Home() {
   const [extractKind, setExtractKind] = useState<MediaKind>("audio");
   const [convertKind, setConvertKind] = useState<MediaKind>("audio");
   const [url, setUrl] = useState("");
+  const [lastSubmittedUrl, setLastSubmittedUrl] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [videoTrackFile, setVideoTrackFile] = useState<File | null>(null);
@@ -281,9 +278,13 @@ export default function Home() {
     setProcessProgress(0);
   }
 
-  const downloadKind = getDownloadUrlKind(url);
+  const normalizedDownloadUrl = normalizeDownloadUrl(url);
+  const downloadKind = normalizedDownloadUrl?.kind ?? "video";
   const downloadUrlValidation = validateDownloadUrl(url, downloadKind);
   const validDownloadUrl = downloadUrlValidation.valid;
+  const currentUrl = url.trim();
+  const clarityVisibleUrl = currentUrl || lastSubmittedUrl;
+  const clarityVisibleUrlIsValid = currentUrl ? validDownloadUrl : Boolean(lastSubmittedUrl);
   const downloadUrlError =
     downloadUrlValidation.reason === "youtubeUrl" ? t("youtubeUrlWarning") : t("invalidUrl");
   const processHasInput =
@@ -299,6 +300,7 @@ export default function Home() {
     setMode("download");
     setStatus("working");
     const submittedUrl = normalized.url;
+    setLastSubmittedUrl(submittedUrl);
     setUrl("");
     setDownloadProgress(0);
     setDownloadStage("preparing");
@@ -446,9 +448,9 @@ export default function Home() {
                 id="media-url"
                 value={url}
                 disabled={busy}
-                data-clarity-unmask="true"
                 onChange={(event) => {
                   setUrl(event.target.value);
+                  setLastSubmittedUrl("");
                   if (mode === "download") setStatus("idle");
                 }}
                 placeholder={t("downloadPlaceholder")}
@@ -457,7 +459,11 @@ export default function Home() {
                 aria-label={t("downloadPlaceholder")}
                 aria-invalid={url.trim().length > 0 && !validDownloadUrl}
                 aria-describedby={
-                  url.trim().length > 0 && !validDownloadUrl ? "download-url-warning" : undefined
+                  url.trim().length > 0 && !validDownloadUrl
+                    ? "download-url-warning download-url-recorded"
+                    : clarityVisibleUrl
+                      ? "download-url-recorded"
+                      : undefined
                 }
               />
             </div>
@@ -491,6 +497,26 @@ export default function Home() {
               <span>{downloadUrlError}</span>
             </p>
           )}
+          <output
+            className="download-url-recognized"
+            id="download-url-recorded"
+            htmlFor="media-url"
+            aria-live="polite"
+            data-clarity-unmask="true"
+            data-invalid={clarityVisibleUrlIsValid ? undefined : "true"}
+          >
+            {clarityVisibleUrl && (
+              <>
+                {clarityVisibleUrlIsValid ? (
+                  <BadgeCheck size={15} aria-hidden="true" />
+                ) : (
+                  <CircleAlert size={15} aria-hidden="true" />
+                )}
+                <span>{t(clarityVisibleUrlIsValid ? "recognizedUrl" : "receivedUrl")}</span>
+                <strong>{clarityVisibleUrl}</strong>
+              </>
+            )}
+          </output>
 
           <p className="legal-line">
             {t("legalA")} <Link href="/terms">{t("terms")}</Link> {t("legalB")}
