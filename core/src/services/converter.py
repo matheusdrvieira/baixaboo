@@ -9,7 +9,7 @@ import shutil
 import signal
 import time
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from pathlib import Path
 from typing import Literal, TypedDict, cast
 from urllib.parse import unquote
@@ -72,6 +72,8 @@ class ProcessJob:
     progress: int = 1
     error: str | None = None
     process: asyncio.subprocess.Process | None = None
+    revision: int = 0
+    event: asyncio.Event = dataclass_field(default_factory=asyncio.Event, repr=False)
 
     def snapshot(self) -> ProcessSnapshot:
         return {
@@ -178,10 +180,39 @@ class ProcessManager:
 
         job.progress = 20
         job.updated_at = time.monotonic()
+        self._signal(job)
         task = asyncio.create_task(self._run(job))
         self._tasks[token] = task
         task.add_done_callback(lambda _task, job_id=token: self._tasks.pop(job_id, None))
         return job.snapshot()
+
+    async def wait_for_change(
+        self,
+        token: str,
+        session_id: str,
+        after_revision: int,
+        *,
+        timeout: float = 15,
+    ) -> tuple[ProcessSnapshot, int] | None:
+        lock = self._require_lock()
+        async with lock:
+            job = self._jobs.get(token)
+            if job is None or job.session_id != session_id:
+                raise ServiceError("unavailable", 404)
+            job.event.clear()
+            if job.revision != after_revision:
+                return job.snapshot(), job.revision
+
+        try:
+            await asyncio.wait_for(job.event.wait(), timeout=timeout)
+        except TimeoutError:
+            return None
+
+        async with lock:
+            job = self._jobs.get(token)
+            if job is None or job.session_id != session_id:
+                raise ServiceError("unavailable", 404)
+            return job.snapshot(), job.revision
 
     async def get(self, token: str, session_id: str) -> ProcessSnapshot:
         lock = self._require_lock()
@@ -216,6 +247,7 @@ class ProcessManager:
                 raise ServiceError("unavailable", 404)
             job.status = "downloading"
             job.updated_at = time.monotonic()
+            self._signal(job)
             return job.output_path, job.filename, job.media_type
 
     async def mark_delivered(self, token: str) -> None:
@@ -227,6 +259,7 @@ class ProcessManager:
                 job.status = "delivered"
                 job.progress = 100
                 job.updated_at = time.monotonic()
+                self._signal(job)
                 directory = job.directory
         if directory is not None:
             await asyncio.to_thread(shutil.rmtree, directory, True)
@@ -344,6 +377,7 @@ class ProcessManager:
                         job.status = "failed"
                         job.error = "timeout"
                         job.updated_at = now
+                        self._signal(job)
                         stalled.append(job)
                         task = self._tasks.get(token)
                         if task is not None:
@@ -367,21 +401,32 @@ class ProcessManager:
             for job in expired:
                 await asyncio.to_thread(shutil.rmtree, job.directory, True)
 
-    @staticmethod
     def _update(
+        self,
         job: ProcessJob,
         *,
         status: ProcessStatus | None = None,
         progress: int | None = None,
         error: str | None = None,
     ) -> None:
+        changed = False
         if status is not None:
+            changed = changed or status != job.status
             job.status = status
         if progress is not None:
-            job.progress = max(job.progress, progress)
+            next_progress = max(job.progress, progress)
+            changed = changed or next_progress != job.progress
+            job.progress = next_progress
         if error is not None:
+            changed = changed or error != job.error
             job.error = error
         job.updated_at = time.monotonic()
+        if changed:
+            self._signal(job)
+
+    def _signal(self, job: ProcessJob) -> None:
+        job.revision += 1
+        job.event.set()
 
     @staticmethod
     def _reset_temp_root() -> None:

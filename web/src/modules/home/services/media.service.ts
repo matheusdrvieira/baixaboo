@@ -1,10 +1,6 @@
 import axios from "axios";
-import {
-  normalizeDownloadUrl,
-  validateDownloadUrl,
-  validateMediaUrl,
-} from "@/shared/lib/media/format";
-import { MediaApiError, type MediaAnalysis, type MediaErrorCode } from "@/shared/lib/media/types";
+import { normalizeDownloadUrl, validateDownloadUrl } from "@/shared/lib/media/format";
+import { MediaApiError, type MediaErrorCode } from "@/shared/lib/media/types";
 import { api } from "@/shared/services/http";
 
 export type MediaProcessOperation =
@@ -55,18 +51,6 @@ export type ActiveMediaProcess = {
   format: string;
 };
 
-export async function analyzeMedia(url: string): Promise<MediaAnalysis> {
-  const validation = validateMediaUrl(url);
-  if (!validation.valid) throw new MediaApiError("invalid_url", validation.reason);
-
-  try {
-    const { data } = await api.post<MediaAnalysis>("/analyze", { url });
-    return data;
-  } catch (error) {
-    throw mediaApiError(error, "analysis_failed");
-  }
-}
-
 export async function downloadMedia({
   url,
   jobId,
@@ -104,11 +88,13 @@ export async function downloadMedia({
     onStage?.(job.status === "processing" ? "preparing" : "downloading");
     onProgress?.(job.progress);
 
-    while (job.status === "processing") {
-      await delay(250);
-      const { data } = await api.get<PreparedDownloadStatus>(`/downloads/${job.id}`);
-      job = data;
-      onProgress?.(job.progress);
+    if (job.status === "processing") {
+      job = await waitForJobStatus<PreparedDownloadStatus>(
+        `/downloads/${job.id}/events`,
+        `/downloads/${job.id}`,
+        (status) => status.status !== "processing",
+        (status) => onProgress?.(status.progress),
+      );
     }
 
     if (job.status === "failed") {
@@ -127,10 +113,13 @@ export async function downloadMedia({
       throw new MediaApiError("unavailable");
     }
 
-    while (job.status === "ready" || job.status === "downloading") {
-      await delay(1_000);
-      const { data } = await api.get<PreparedDownloadStatus>(`/downloads/${job.id}`);
-      job = data;
+    if (job.status === "ready" || job.status === "downloading") {
+      job = await waitForJobStatus<PreparedDownloadStatus>(
+        `/downloads/${job.id}/events`,
+        `/downloads/${job.id}`,
+        (status) => status.status !== "ready" && status.status !== "downloading",
+        (status) => onProgress?.(status.progress),
+      );
     }
 
     if (job.status === "failed") {
@@ -180,6 +169,71 @@ function forgetActiveDownload(jobId: string): void {
   }
 }
 
+function waitForJobStatus<TStatus>(
+  eventsPath: string,
+  statusPath: string,
+  shouldStop: (status: TStatus) => boolean,
+  onStatus: (status: TStatus) => void,
+): Promise<TStatus> {
+  return new Promise((resolve, reject) => {
+    let source: EventSource | null = null;
+    let retryTimer: number | undefined;
+    let settled = false;
+
+    function close() {
+      source?.close();
+      source = null;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    }
+
+    function finish(status: TStatus) {
+      if (settled) return;
+      settled = true;
+      close();
+      resolve(status);
+    }
+
+    function fail(error: unknown) {
+      if (settled) return;
+      settled = true;
+      close();
+      reject(mediaApiError(error, "service_unavailable"));
+    }
+
+    function receive(status: TStatus) {
+      onStatus(status);
+      if (shouldStop(status)) finish(status);
+    }
+
+    function connect() {
+      if (settled) return;
+      source = new EventSource(api.getUri({ url: eventsPath }), {
+        withCredentials: true,
+      });
+      source.onmessage = (event) => {
+        try {
+          receive(JSON.parse(event.data) as TStatus);
+        } catch (error) {
+          fail(error);
+        }
+      };
+      source.onerror = () => {
+        source?.close();
+        source = null;
+        void api
+          .get<TStatus>(statusPath)
+          .then(({ data }) => {
+            receive(data);
+            if (!settled) retryTimer = window.setTimeout(connect, 1_000);
+          })
+          .catch(fail);
+      };
+    }
+
+    connect();
+  });
+}
+
 export async function processMediaFile({
   file,
   operation,
@@ -213,11 +267,13 @@ export async function processMediaFile({
     }
     onProgress?.(job.progress);
 
-    while (job.status === "processing") {
-      await delay(250);
-      const { data } = await api.get<ProcessedMediaStatus>(`/process/${job.id}`);
-      job = data;
-      onProgress?.(job.progress);
+    if (job.status === "processing") {
+      job = await waitForJobStatus<ProcessedMediaStatus>(
+        `/process/${job.id}/events`,
+        `/process/${job.id}`,
+        (status) => status.status !== "processing",
+        (status) => onProgress?.(status.progress),
+      );
     }
 
     if (job.status === "failed") {
@@ -243,10 +299,13 @@ export async function processMediaFile({
       onStage?.("downloading");
     }
 
-    while (job.status === "ready" || job.status === "downloading") {
-      await delay(1_000);
-      const { data } = await api.get<ProcessedMediaStatus>(`/process/${job.id}`);
-      job = data;
+    if (job.status === "ready" || job.status === "downloading") {
+      job = await waitForJobStatus<ProcessedMediaStatus>(
+        `/process/${job.id}/events`,
+        `/process/${job.id}`,
+        (status) => status.status !== "ready" && status.status !== "downloading",
+        (status) => onProgress?.(status.progress),
+      );
     }
     if (job.status !== "delivered") {
       throw new MediaApiError(job.error ?? "unavailable");
@@ -284,8 +343,4 @@ function errorCodeFromStatus(status?: number): MediaErrorCode {
   if (status === 403) return "unauthorized_content";
   if (status === 408 || status === 504) return "timeout";
   return "service_unavailable";
-}
-
-function delay(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }

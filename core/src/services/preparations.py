@@ -7,7 +7,7 @@ import shutil
 import threading
 import time
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from pathlib import Path
 from typing import Callable, Literal, TypedDict, cast
 
@@ -71,6 +71,8 @@ class DownloadJob:
     path: Path | None = None
     error: str | None = None
     reserved_bytes: int = 0
+    revision: int = 0
+    event: asyncio.Event = dataclass_field(default_factory=asyncio.Event, repr=False)
 
     def snapshot(self) -> JobSnapshot:
         return {
@@ -154,6 +156,34 @@ class PreparationManager:
             task.add_done_callback(lambda _task, job_id=token: self._tasks.pop(job_id, None))
             return job.snapshot()
 
+    async def wait_for_change(
+        self,
+        token: str,
+        session_id: str,
+        after_revision: int,
+        *,
+        timeout: float = 15,
+    ) -> tuple[JobSnapshot, int] | None:
+        lock = self._require_lock()
+        async with lock:
+            job = self._jobs.get(token)
+            if job is None or job.session_id != session_id:
+                raise ServiceError("unavailable", 404)
+            job.event.clear()
+            if job.revision != after_revision:
+                return job.snapshot(), job.revision
+
+        try:
+            await asyncio.wait_for(job.event.wait(), timeout=timeout)
+        except TimeoutError:
+            return None
+
+        async with lock:
+            job = self._jobs.get(token)
+            if job is None or job.session_id != session_id:
+                raise ServiceError("unavailable", 404)
+            return job.snapshot(), job.revision
+
     async def get(self, token: str, session_id: str) -> JobSnapshot:
         lock = self._require_lock()
         async with lock:
@@ -189,6 +219,7 @@ class PreparationManager:
             if job.status == "ready":
                 job.status = "downloading"
                 job.updated_at = time.monotonic()
+                self._signal(job)
             return job.path, job.filename
 
     async def mark_delivered(self, token: str) -> None:
@@ -198,11 +229,13 @@ class PreparationManager:
             if job is not None and job.status in {"ready", "downloading"}:
                 job.status = "delivered"
                 job.updated_at = time.monotonic()
+                self._signal(job)
 
     async def _run(self, job: DownloadJob) -> None:
         semaphore = self._require_semaphore()
         async with semaphore:
             self._update(job.id, status="processing", progress=1)
+            logger.info("Media preparation started (job=%s, playlist=%s)", job.id, job.playlist)
             job_directory = TEMP_ROOT / job.id
             try:
                 async with asyncio.timeout(MAX_PREPARATION_RUNTIME_SECONDS):
@@ -210,15 +243,18 @@ class PreparationManager:
                         await self._run_playlist(job, job_directory)
                     else:
                         await self._run_single(job, job_directory)
+                logger.info("Media preparation completed (job=%s)", job.id)
             except asyncio.CancelledError:
                 await asyncio.to_thread(shutil.rmtree, job_directory, True)
                 raise
             except TimeoutError:
                 await asyncio.to_thread(shutil.rmtree, job_directory, True)
                 self._update(job.id, status="failed", error="timeout", reserved_bytes=0)
+                logger.warning("Media preparation timed out (job=%s)", job.id)
             except ServiceError as error:
                 await asyncio.to_thread(shutil.rmtree, job_directory, True)
                 self._update(job.id, status="failed", error=error.code, reserved_bytes=0)
+                logger.warning("Media preparation failed (job=%s, code=%s)", job.id, error.code)
             except Exception:
                 await asyncio.to_thread(shutil.rmtree, job_directory, True)
                 logger.exception("Unexpected media preparation failure (job=%s)", job.id)
@@ -442,6 +478,7 @@ class PreparationManager:
                         job.error = "timeout"
                         job.reserved_bytes = 0
                         job.updated_at = now
+                        self._signal(job)
                         stalled.append(job)
                         task = self._tasks.get(token)
                         if task is not None:
@@ -467,8 +504,12 @@ class PreparationManager:
     def _update_progress(self, token: str, progress: int) -> None:
         job = self._jobs.get(token)
         if job is not None and job.status == "processing":
-            job.progress = max(job.progress, progress)
+            next_progress = max(job.progress, progress)
+            changed = next_progress != job.progress
+            job.progress = next_progress
             job.updated_at = time.monotonic()
+            if changed:
+                self._signal(job)
 
     def _update(
         self,
@@ -497,6 +538,11 @@ class PreparationManager:
         if reserved_bytes is not None:
             job.reserved_bytes = reserved_bytes
         job.updated_at = time.monotonic()
+        self._signal(job)
+
+    def _signal(self, job: DownloadJob) -> None:
+        job.revision += 1
+        job.event.set()
 
     @staticmethod
     def _reset_temp_root() -> None:

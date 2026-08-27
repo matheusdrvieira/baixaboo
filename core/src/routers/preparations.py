@@ -14,6 +14,7 @@ from ..services.sessions import (
     session_for_request,
     set_session_cookie,
 )
+from ..services.sse import job_events_response
 from ..services.url_guard import normalize_download_url, validate_public_url
 
 router = APIRouter(prefix="/downloads", tags=["downloads"])
@@ -58,6 +59,20 @@ async def active_download(request: Request) -> JobSnapshot:
 @router.get("/{token}")
 async def download_status(token: str, request: Request) -> JobSnapshot:
     return await preparation_manager.get(token, require_session(request))
+
+
+@router.get("/{token}/events", response_class=StreamingResponse)
+async def download_events(token: str, request: Request) -> StreamingResponse:
+    session_id = require_session(request)
+    await preparation_manager.get(token, session_id)
+    return job_events_response(
+        request,
+        lambda revision: preparation_manager.wait_for_change(
+            token,
+            session_id,
+            revision,
+        ),
+    )
 
 
 @router.get("/{token}/file", response_class=StreamingResponse)

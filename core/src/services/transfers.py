@@ -1,112 +1,96 @@
 from __future__ import annotations
 
-import json
-import logging
-import secrets
-import socket
-import subprocess
-import threading
 import time
-import urllib.error
-import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from yt_dlp.utils import DownloadError
+
 from ..errors import ServiceError
 from .downloader import (
-    PLAYER_CLIENT_INFO_KEY,
-    YOUTUBE_CLIENT,
+    DOWNLOAD_FORMAT,
+    USE_COOKIES_INFO_KEY,
     common_options,
     media_format_size,
     selected_media_formats,
     youtube_downloader,
 )
-from .url_guard import validate_public_url_sync
 
-ARIA_CONNECTIONS = 8
-THROTTLE_BYTES_PER_SECOND = 200 * 1024
-THROTTLE_GRACE_SECONDS = 20
-THROTTLE_WINDOW_SECONDS = 15
-THROTTLE_MIN_REMAINING_BYTES = 8 * 1024 * 1024
-THROTTLE_REFRESH_ATTEMPTS = 2
-
-_RPC_PORTS: set[int] = set()
-_RPC_PORTS_LOCK = threading.Lock()
-logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True, slots=True)
-class MediaStream:
-    index: int
-    format_id: str
-    kind: str
-    expected_bytes: int
-    protocol: str
-    extension: str
-    url: str
-    headers: tuple[tuple[str, str], ...]
-
-
-@dataclass(frozen=True, slots=True)
-class AriaStatus:
-    active_count: int
-    waiting_count: int
-    stopped_count: int
-    completed_bytes: int
-    total_bytes: int
-    speed: int
+DOWNLOAD_PROGRESS_START = 2
+DOWNLOAD_PROGRESS_END = 90
+MERGE_PROGRESS = 95
+FRAGMENT_CONCURRENCY = 4
 
 
 class TransferProgress:
     def __init__(
         self,
-        streams: list[MediaStream],
+        info: dict[str, object],
         callback: Callable[[int], None],
     ) -> None:
+        formats = selected_media_formats(info)
         self._callback = callback
-        self._completed = [0] * len(streams)
-        self._total = [stream.expected_bytes for stream in streams]
-        self._lock = threading.Lock()
+        self._format_ids = [str(item.get("format_id") or "") for item in formats]
+        self._expected = [media_format_size(item) for item in formats]
+        self._completed = [0] * len(formats)
+        self._finished = [False] * len(formats)
 
-    def update(self, index: int, completed_bytes: int, total_bytes: int) -> None:
-        with self._lock:
-            self._completed[index] = max(self._completed[index], completed_bytes)
-            self._total[index] = max(self._total[index], total_bytes)
-            known_total = sum(self._total)
-            if known_total <= 0:
-                return
-            known_completed = sum(
-                min(completed, total)
-                for completed, total in zip(self._completed, self._total, strict=True)
-            )
-            progress = min(90, 2 + int(known_completed * 88 / known_total))
-        self._callback(progress)
+    def report(self, download: dict[str, object]) -> None:
+        info = download.get("info_dict")
+        if not isinstance(info, dict):
+            return
 
-    def finish(self, index: int) -> None:
-        with self._lock:
-            total = self._total[index]
+        format_id = str(info.get("format_id") or "")
+        try:
+            index = self._format_ids.index(format_id)
+        except ValueError:
+            return
+
+        status = str(download.get("status") or "")
+        completed = int(download.get("downloaded_bytes") or 0)
+        total = int(
+            download.get("total_bytes")
+            or download.get("total_bytes_estimate")
+            or self._expected[index]
+            or 0
+        )
         if total > 0:
-            self.update(index, total, total)
+            self._expected[index] = max(self._expected[index], total)
+            self._completed[index] = max(self._completed[index], min(completed, total))
+        if status == "finished":
+            self._finished[index] = True
+            if self._expected[index] > 0:
+                self._completed[index] = self._expected[index]
 
+        self._callback(self._percentage())
 
-class TransferAbort:
-    def __init__(self) -> None:
-        self.event = threading.Event()
-        self._error: ServiceError | None = None
-        self._lock = threading.Lock()
+    def _percentage(self) -> int:
+        if not self._format_ids:
+            return DOWNLOAD_PROGRESS_START
 
-    def fail(self, error: ServiceError) -> None:
-        with self._lock:
-            if self._error is None:
-                self._error = error
-        self.event.set()
+        if all(size > 0 for size in self._expected):
+            total = sum(self._expected)
+            completed = sum(
+                min(done, expected)
+                for done, expected in zip(self._completed, self._expected, strict=True)
+            )
+            fraction = completed / total if total else 0
+        else:
+            fractions = [
+                1.0
+                if finished
+                else (done / expected if expected > 0 else 0.0)
+                for done, expected, finished in zip(
+                    self._completed,
+                    self._expected,
+                    self._finished,
+                    strict=True,
+                )
+            ]
+            fraction = sum(fractions) / len(fractions)
 
-    @property
-    def error(self) -> ServiceError | None:
-        with self._lock:
-            return self._error
+        span = DOWNLOAD_PROGRESS_END - DOWNLOAD_PROGRESS_START
+        return min(DOWNLOAD_PROGRESS_END, DOWNLOAD_PROGRESS_START + int(fraction * span))
 
 
 def prepare_media_file(
@@ -119,542 +103,76 @@ def prepare_media_file(
     progress_callback: Callable[[int], None],
     disk_check: Callable[[], None],
 ) -> Path:
-    formats = selected_media_formats(info)
-    for media_format in formats:
-        media_url = media_format.get("url")
-        if isinstance(media_url, str):
-            validate_public_url_sync(media_url)
-
-    player_client = str(info.get(PLAYER_CLIENT_INFO_KEY) or YOUTUBE_CLIENT)
-    streams = [
-        MediaStream(
-            index=index,
-            format_id=str(media_format.get("format_id") or ""),
-            kind=_stream_kind(media_format),
-            expected_bytes=media_format_size(media_format),
-            protocol=str(media_format.get("protocol") or ""),
-            extension=_safe_extension(media_format.get("ext")),
-            url=str(media_format.get("url") or ""),
-            headers=_safe_http_headers(media_format.get("http_headers")),
-        )
-        for index, media_format in enumerate(formats)
-    ]
-    if not streams or any(
-        not stream.format_id or not stream.url for stream in streams
-    ):
-        raise ServiceError("unavailable")
-
-    estimated_bytes = sum(stream.expected_bytes for stream in streams)
-    if estimated_bytes > size_limit:
-        raise ServiceError("file_too_large", 413)
-
-    progress = TransferProgress(streams, progress_callback)
-    abort = TransferAbort()
-    paths: dict[int, Path] = {}
-    workers = min(2, len(streams))
-
-    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="media-stream") as pool:
-        futures = {
-            pool.submit(
-                _download_stream,
-                url=url,
-                directory=directory,
-                output_stem=output_stem,
-                stream=stream,
-                player_client=player_client,
-                progress=progress,
-                abort=abort,
-                disk_check=disk_check,
-            ): stream.index
-            for stream in streams
-        }
-        try:
-            for future in as_completed(futures):
-                paths[futures[future]] = future.result()
-        except BaseException:
-            abort.event.set()
-            for future in futures:
-                future.cancel()
-            raise
-
-    if abort.error is not None:
-        raise abort.error
-    ordered_paths = [paths[stream.index] for stream in streams]
-    if len(ordered_paths) == 1:
-        source = ordered_paths[0]
-        destination = directory / f"{output_stem}{source.suffix}"
-        source.replace(destination)
-        progress_callback(95)
-        return destination
-
-    video_path = next(
-        (paths[stream.index] for stream in streams if stream.kind == "video"),
-        None,
-    )
-    audio_path = next(
-        (paths[stream.index] for stream in streams if stream.kind == "audio"),
-        None,
-    )
-    if video_path is None or audio_path is None:
-        raise ServiceError("unavailable")
-
-    progress_callback(95)
-    destination = directory / f"{output_stem}.mp4"
-    try:
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-y",
-                "-protocol_whitelist",
-                "file,pipe",
-                "-i",
-                str(video_path),
-                "-i",
-                str(audio_path),
-                "-map",
-                "0:v:0",
-                "-map",
-                "1:a:0",
-                "-c",
-                "copy",
-                str(destination),
-            ],
-            check=True,
-        )
-    except (OSError, subprocess.CalledProcessError) as error:
-        raise ServiceError("service_unavailable") from error
-    finally:
-        video_path.unlink(missing_ok=True)
-        audio_path.unlink(missing_ok=True)
-
-    disk_check()
-    return destination
-
-
-def _download_stream(
-    *,
-    url: str,
-    directory: Path,
-    output_stem: str,
-    stream: MediaStream,
-    player_client: str,
-    progress: TransferProgress,
-    abort: TransferAbort,
-    disk_check: Callable[[], None],
-) -> Path:
-    prefix = f"{output_stem}.{stream.kind}-{stream.index}"
-    if stream.protocol.startswith("m3u8"):
-        return _download_hls_stream(
-            url=url,
-            directory=directory,
-            prefix=prefix,
-            stream=stream,
-            player_client=player_client,
-            progress=progress,
-            abort=abort,
-            disk_check=disk_check,
-        )
-
-    for attempt in range(THROTTLE_REFRESH_ATTEMPTS + 1):
-        if abort.event.is_set():
-            raise abort.error or ServiceError("service_unavailable")
-
-        retry_error: BaseException | None = None
-        rpc_port = _claim_rpc_port()
-        rpc_secret = secrets.token_urlsafe(24)
-        stop = threading.Event()
-        throttled = threading.Event()
-        monitor = threading.Thread(
-            target=_monitor_aria,
-            kwargs={
-                "stream": stream,
-                "progress": progress,
-                "directory": directory,
-                "prefix": prefix,
-                "port": rpc_port,
-                "secret": rpc_secret,
-                "stop": stop,
-                "throttled": throttled,
-                "abort": abort,
-                "disk_check": disk_check,
-                "detect_throttling": attempt < THROTTLE_REFRESH_ATTEMPTS,
-            },
-            daemon=True,
-        )
-        monitor.start()
-        try:
-            _run_aria_stream(
-                directory=directory,
-                prefix=prefix,
-                stream=stream,
-                rpc_port=rpc_port,
-                rpc_secret=rpc_secret,
-            )
-        except (OSError, subprocess.CalledProcessError) as error:
-            if abort.error is not None:
-                raise abort.error
-            if attempt >= THROTTLE_REFRESH_ATTEMPTS:
-                raise ServiceError("unavailable") from error
-            retry_error = error
-        finally:
-            stop.set()
-            monitor.join(timeout=1)
-            _release_rpc_port(rpc_port)
-
-        if retry_error is not None:
-            logger.warning(
-                "Media transfer interrupted; resuming stream (format=%s, attempt=%s)",
-                stream.format_id,
-                attempt + 1,
-            )
-            time.sleep(1)
-            continue
-
-        candidate = _finished_stream_path(directory, prefix)
-        if candidate is not None:
-            progress.finish(stream.index)
-            return candidate
-        if not throttled.is_set():
-            raise ServiceError("unavailable")
-
-        logger.warning(
-            "Media transfer throttled; resuming stream (format=%s, attempt=%s)",
-            stream.format_id,
-            attempt + 1,
-        )
-        time.sleep(0.25)
-
-    raise ServiceError("service_unavailable")
-
-
-def _run_aria_stream(
-    *,
-    directory: Path,
-    prefix: str,
-    stream: MediaStream,
-    rpc_port: int,
-    rpc_secret: str,
-) -> None:
-    aria_arguments = [
-        f"--max-connection-per-server={ARIA_CONNECTIONS}",
-        f"--split={ARIA_CONNECTIONS}",
-        "--min-split-size=1M",
-        "--piece-length=1M",
-        "--file-allocation=none",
-        "--continue=true",
-        "--always-resume=true",
-        "--max-resume-failure-tries=2",
-        "--connect-timeout=10",
-        "--timeout=20",
-        "--max-tries=3",
-        "--retry-wait=1",
-        "--summary-interval=0",
-        "--console-log-level=warn",
-        "--quiet=true",
-        "--enable-rpc=true",
-        f"--rpc-listen-port={rpc_port}",
-        f"--rpc-secret={rpc_secret}",
-        "--rpc-listen-all=false",
-        "--rpc-allow-origin-all=false",
-    ]
-    output_name = f"{prefix}.{stream.extension}"
-    header_arguments = [
-        f"--header={name}: {value}" for name, value in stream.headers
-    ]
-    subprocess.run(
-        [
-            "aria2c",
-            *aria_arguments,
-            "--allow-overwrite=true",
-            "--auto-file-renaming=false",
-            f"--dir={directory}",
-            f"--out={output_name}",
-            *header_arguments,
-            stream.url,
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-
-
-def _download_hls_stream(
-    *,
-    url: str,
-    directory: Path,
-    prefix: str,
-    stream: MediaStream,
-    player_client: str,
-    progress: TransferProgress,
-    abort: TransferAbort,
-    disk_check: Callable[[], None],
-) -> Path:
+    progress = TransferProgress(info, progress_callback)
     last_disk_check = 0.0
+    hook_error: ServiceError | None = None
 
     def report(download: dict[str, object]) -> None:
-        nonlocal last_disk_check
-        if abort.event.is_set():
-            raise abort.error or ServiceError("service_unavailable")
-
-        status = str(download.get("status") or "")
-        completed_bytes = int(download.get("downloaded_bytes") or 0)
-        total_bytes = int(
-            download.get("total_bytes")
-            or download.get("total_bytes_estimate")
-            or stream.expected_bytes
-            or 0
-        )
-        if completed_bytes > 0 or total_bytes > 0:
-            progress.update(stream.index, completed_bytes, total_bytes)
+        nonlocal hook_error, last_disk_check
+        progress.report(download)
 
         now = time.monotonic()
-        if now - last_disk_check >= 1:
-            last_disk_check = now
-            try:
-                disk_check()
-            except ServiceError as error:
-                abort.fail(error)
-                raise
+        if now - last_disk_check < 1:
+            return
+        last_disk_check = now
+        try:
+            disk_check()
+        except ServiceError as error:
+            hook_error = error
+            raise
 
-        if status == "finished":
-            progress.finish(stream.index)
+    def report_postprocessor(event: dict[str, object]) -> None:
+        if event.get("status") in {"started", "processing"}:
+            progress_callback(MERGE_PROGRESS)
 
+    progress_callback(DOWNLOAD_PROGRESS_START)
     options = {
-        **common_options(player_client),
-        "format": stream.format_id,
+        **common_options(),
+        "format": DOWNLOAD_FORMAT,
+        "outtmpl": str(directory / f"{output_stem}.%(ext)s"),
+        "merge_output_format": "mp4",
         "noplaylist": True,
-        "outtmpl": str(directory / f"{prefix}.%(ext)s"),
-        "concurrent_fragment_downloads": ARIA_CONNECTIONS,
-        "fragment_retries": 5,
-        "retries": 3,
-        "skip_unavailable_fragments": False,
         "overwrites": True,
+        "continuedl": True,
+        "concurrent_fragment_downloads": FRAGMENT_CONCURRENCY,
         "progress_hooks": [report],
+        "postprocessor_hooks": [report_postprocessor],
     }
-    with youtube_downloader(options) as downloader:
-        downloader.download([url])
 
-    candidate = _finished_stream_path(directory, prefix)
-    if candidate is None:
+    try:
+        with youtube_downloader(
+            options,
+            use_cookies=bool(info.get(USE_COOKIES_INFO_KEY, True)),
+        ) as downloader:
+            downloader.extract_info(url, download=True)
+    except DownloadError:
+        if hook_error is not None:
+            raise hook_error
+        raise
+
+    if hook_error is not None:
+        raise hook_error
+    disk_check()
+    progress_callback(MERGE_PROGRESS)
+
+    path = _finished_media_path(directory, output_stem)
+    if path is None:
         raise ServiceError("unavailable")
-    progress.finish(stream.index)
-    return candidate
+    if path.stat().st_size > size_limit:
+        raise ServiceError("file_too_large", 413)
+    return path
 
 
-def _monitor_aria(
-    *,
-    stream: MediaStream,
-    progress: TransferProgress,
-    directory: Path,
-    prefix: str,
-    port: int,
-    secret: str,
-    stop: threading.Event,
-    throttled: threading.Event,
-    abort: TransferAbort,
-    disk_check: Callable[[], None],
-    detect_throttling: bool,
-) -> None:
-    active_since: float | None = None
-    low_speed_since: float | None = None
-    last_disk_check = 0.0
-    while not stop.wait(0.2):
-        status = _aria_status(port, secret)
-        if status is None:
-            continue
-        if status.active_count == 0:
-            if status.waiting_count == 0 and status.stopped_count > 0:
-                progress.update(
-                    stream.index,
-                    status.completed_bytes,
-                    status.total_bytes,
-                )
-                _shutdown_aria(port, secret)
-                return
-            continue
+def _finished_media_path(directory: Path, output_stem: str) -> Path | None:
+    expected = directory / f"{output_stem}.mp4"
+    if expected.is_file():
+        return expected
 
-        now = time.monotonic()
-        active_since = active_since or now
-        progress.update(
-            stream.index,
-            status.completed_bytes,
-            status.total_bytes,
-        )
-
-        if abort.event.is_set():
-            _shutdown_aria(port, secret, force=True)
-            return
-
-        if now - last_disk_check >= 1:
-            last_disk_check = now
-            try:
-                disk_check()
-            except ServiceError as error:
-                abort.fail(error)
-                _shutdown_aria(port, secret, force=True)
-                return
-
-        remaining_bytes = max(status.total_bytes - status.completed_bytes, 0)
-        below_limit = (
-            detect_throttling
-            and now - active_since >= THROTTLE_GRACE_SECONDS
-            and remaining_bytes >= THROTTLE_MIN_REMAINING_BYTES
-            and status.speed < THROTTLE_BYTES_PER_SECOND
-        )
-        if not below_limit:
-            low_speed_since = None
-            continue
-        low_speed_since = low_speed_since or now
-        if now - low_speed_since >= THROTTLE_WINDOW_SECONDS:
-            throttled.set()
-            _shutdown_aria(port, secret, force=True)
-            return
-
-
-def _aria_status(port: int, secret: str) -> AriaStatus | None:
-    token = f"token:{secret}"
-    payload = json.dumps(
-        [
-            {
-                "jsonrpc": "2.0",
-                "id": "active",
-                "method": "aria2.tellActive",
-                "params": [
-                    token,
-                    ["completedLength", "totalLength", "downloadSpeed"],
-                ],
-            },
-            {
-                "jsonrpc": "2.0",
-                "id": "global",
-                "method": "aria2.getGlobalStat",
-                "params": [token],
-            },
-            {
-                "jsonrpc": "2.0",
-                "id": "stopped",
-                "method": "aria2.tellStopped",
-                "params": [
-                    token,
-                    0,
-                    1,
-                    ["completedLength", "totalLength", "downloadSpeed"],
-                ],
-            },
-        ]
-    ).encode()
-    request = urllib.request.Request(
-        f"http://127.0.0.1:{port}/jsonrpc",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=0.15) as response:
-            batch = json.loads(response.read())
-    except (OSError, TimeoutError, ValueError, urllib.error.URLError):
-        return None
-    if not isinstance(batch, list):
-        return None
-    results = {
-        item.get("id"): item.get("result")
-        for item in batch
-        if isinstance(item, dict) and "result" in item
-    }
-    active = results.get("active") or []
-    stopped = results.get("stopped") or []
-    global_status = results.get("global") or {}
-    transfers = [*active, *stopped]
-    return AriaStatus(
-        active_count=int(global_status.get("numActive") or 0),
-        waiting_count=int(global_status.get("numWaiting") or 0),
-        stopped_count=int(global_status.get("numStopped") or 0),
-        completed_bytes=sum(
-            int(item.get("completedLength") or 0) for item in transfers
-        ),
-        total_bytes=sum(int(item.get("totalLength") or 0) for item in transfers),
-        speed=int(global_status.get("downloadSpeed") or 0),
-    )
-
-
-def _shutdown_aria(port: int, secret: str, *, force: bool = False) -> None:
-    payload = json.dumps(
-        {
-            "jsonrpc": "2.0",
-            "id": "baixaboo-shutdown",
-            "method": "aria2.forceShutdown" if force else "aria2.shutdown",
-            "params": [f"token:{secret}"],
-        }
-    ).encode()
-    request = urllib.request.Request(
-        f"http://127.0.0.1:{port}/jsonrpc",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=0.5):
-            return
-    except (OSError, urllib.error.URLError):
-        return
-
-
-def _finished_stream_path(directory: Path, prefix: str) -> Path | None:
     candidates = [
         path
-        for path in directory.iterdir()
+        for path in directory.glob(f"{output_stem}.*")
         if path.is_file()
-        and path.name.startswith(f"{prefix}.")
-        and not path.name.endswith((".part", ".aria2", ".ytdl"))
+        and not path.name.endswith((".part", ".ytdl", ".temp"))
+        and not any(part.startswith(".f") for part in path.suffixes[:-1])
     ]
     return candidates[0] if len(candidates) == 1 else None
-
-
-def _stream_kind(media_format: dict[str, object]) -> str:
-    has_video = str(media_format.get("vcodec") or "none") != "none"
-    has_audio = str(media_format.get("acodec") or "none") != "none"
-    if has_video and not has_audio:
-        return "video"
-    if has_audio and not has_video:
-        return "audio"
-    return "combined"
-
-
-def _safe_extension(value: object) -> str:
-    extension = str(value or "bin").lower()
-    return extension if extension.isalnum() and len(extension) <= 8 else "bin"
-
-
-def _safe_http_headers(value: object) -> tuple[tuple[str, str], ...]:
-    if not isinstance(value, dict):
-        return ()
-    headers: list[tuple[str, str]] = []
-    for raw_name, raw_value in value.items():
-        name = str(raw_name)
-        header_value = str(raw_value)
-        if (
-            name
-            and all(character.isalnum() or character == "-" for character in name)
-            and "\r" not in header_value
-            and "\n" not in header_value
-        ):
-            headers.append((name, header_value))
-    return tuple(headers)
-
-
-def _claim_rpc_port() -> int:
-    for _attempt in range(20):
-        with socket.socket() as candidate:
-            candidate.bind(("127.0.0.1", 0))
-            port = candidate.getsockname()[1]
-        with _RPC_PORTS_LOCK:
-            if port not in _RPC_PORTS:
-                _RPC_PORTS.add(port)
-                return port
-    raise ServiceError("service_unavailable", 503)
-
-
-def _release_rpc_port(port: int) -> None:
-    with _RPC_PORTS_LOCK:
-        _RPC_PORTS.discard(port)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import tempfile
 import urllib.error
@@ -16,8 +17,9 @@ from yt_dlp.networking.exceptions import RequestError
 
 from ..config import settings
 from ..errors import ServiceError
-from . import pot_provider as _pot_provider  # noqa: F401
 from .url_guard import open_public_url, validate_public_url_sync
+
+logger = logging.getLogger(__name__)
 
 DOWNLOAD_FORMAT = (
     "bestvideo[height<=?1080][ext=mp4]+bestaudio[ext=m4a]/"
@@ -39,19 +41,14 @@ class Playlist:
     playlist_id: str
 
 
-YOUTUBE_CLIENT = "mweb"
-PLAYER_CLIENT_INFO_KEY = "_baixaboo_player_client"
 TRANSFER_FORMAT_FIELDS = {
-    "acodec",
-    "ext",
     "filesize",
     "filesize_approx",
     "format_id",
     "http_headers",
-    "protocol",
     "url",
-    "vcodec",
 }
+USE_COOKIES_INFO_KEY = "_baixaboo_use_cookies"
 
 
 class SafeRedirectHandler(RedirectHandler):
@@ -85,23 +82,34 @@ class SafeYoutubeDL(yt_dlp.YoutubeDL):
         return super().build_request_director(safe_handlers, preferences)
 
 
-def common_options(player_client: str = YOUTUBE_CLIENT) -> dict[str, Any]:
+def common_options() -> dict[str, Any]:
     return {
         "js_runtimes": {"node": {}},
-        "extractor_args": {
-            "youtube": {"player_client": [player_client]},
-            "youtubepot-wpc": {"browser_path": ["/usr/bin/chromium"]},
-        },
         "quiet": True,
+        "noprogress": True,
         "no_warnings": True,
-        "socket_timeout": 20,
+        "socket_timeout": 30,
+        "retries": 10,
+        "fragment_retries": 10,
+        "cachedir": False,
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        },
     }
 
 
 @contextmanager
-def youtube_downloader(options: dict[str, Any]) -> Iterator[yt_dlp.YoutubeDL]:
+def youtube_downloader(
+    options: dict[str, Any],
+    *,
+    use_cookies: bool = True,
+) -> Iterator[yt_dlp.YoutubeDL]:
     source = settings.ytdlp_cookies_file
-    if source is None:
+    if source is None or not use_cookies:
         with SafeYoutubeDL(options) as downloader:
             yield downloader
         return
@@ -123,8 +131,7 @@ def extract_media_info(url: str) -> dict[str, Any]:
         "noplaylist": True,
         "skip_download": True,
     }
-    with youtube_downloader(options) as downloader:
-        info = downloader.extract_info(url, download=False)
+    info, used_cookies = _extract_with_cookie_retry(url, options)
 
     if not isinstance(info, dict) or info.get("_type") in {"playlist", "multi_video"}:
         raise ServiceError("unsupported_source")
@@ -142,9 +149,32 @@ def extract_media_info(url: str) -> dict[str, Any]:
         raise ServiceError("unavailable")
     return {
         "id": info.get("id"),
-        PLAYER_CLIENT_INFO_KEY: YOUTUBE_CLIENT,
+        USE_COOKIES_INFO_KEY: used_cookies,
         "requested_formats": compact_formats,
     }
+
+
+def _extract_with_cookie_retry(
+    url: str,
+    options: dict[str, Any],
+) -> tuple[dict[str, Any], bool]:
+    has_cookies = settings.ytdlp_cookies_file is not None
+    attempts = (True, False) if has_cookies else (False,)
+
+    for use_cookies in attempts:
+        try:
+            with youtube_downloader(options, use_cookies=use_cookies) as downloader:
+                info = downloader.extract_info(url, download=False)
+            if not isinstance(info, dict):
+                raise ServiceError("unavailable")
+            return info, use_cookies
+        except yt_dlp.utils.DownloadError:
+            if use_cookies:
+                logger.warning("Authenticated YouTube extraction failed; retrying without cookies")
+                continue
+            raise
+
+    raise ServiceError("unavailable")
 
 
 def selected_media_size(info: dict[str, Any]) -> int:
@@ -159,7 +189,10 @@ def selected_media_formats(info: dict[str, Any]) -> list[dict[str, Any]]:
 
 def media_format_size(media_format: dict[str, Any]) -> int:
     exact_size = int(media_format.get("filesize") or 0)
-    return exact_size if exact_size > 0 else remote_file_size(media_format)
+    if exact_size > 0:
+        return exact_size
+    approximate_size = int(media_format.get("filesize_approx") or 0)
+    return approximate_size if approximate_size > 0 else remote_file_size(media_format)
 
 
 def remote_file_size(media_format: dict[str, Any]) -> int:
@@ -187,8 +220,7 @@ def extract_playlist(url: str) -> Playlist:
         "yesplaylist": True,
         "playlistend": MAX_PLAYLIST_ITEMS,
     }
-    with youtube_downloader(options) as downloader:
-        info = downloader.extract_info(url, download=False)
+    info, _ = _extract_with_cookie_retry(url, options)
 
     if not isinstance(info, dict) or info.get("_type") != "playlist":
         raise ServiceError("unsupported_source")

@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from ..dependencies import process_rate_limit
 from ..services.converter import (
@@ -11,6 +11,7 @@ from ..services.converter import (
     process_manager,
 )
 from ..services.sessions import client_ip, require_session, session_for_request, set_session_cookie
+from ..services.sse import job_events_response
 
 router = APIRouter(prefix="/process", tags=["process"])
 
@@ -42,6 +43,20 @@ async def process_media(
 @router.get("/{token}")
 async def process_status(token: str, request: Request) -> ProcessSnapshot:
     return await process_manager.get(token, require_session(request))
+
+
+@router.get("/{token}/events", response_class=StreamingResponse)
+async def process_events(token: str, request: Request) -> StreamingResponse:
+    session_id = require_session(request)
+    await process_manager.get(token, session_id)
+    return job_events_response(
+        request,
+        lambda revision: process_manager.wait_for_change(
+            token,
+            session_id,
+            revision,
+        ),
+    )
 
 
 @router.get("/active/current")

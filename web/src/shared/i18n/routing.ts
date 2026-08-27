@@ -7,5 +7,3 @@ export const routing = defineRouting({
   localeCookie: false,
   alternateLinks: false,
 });
-
-export type Locale = (typeof routing.locales)[number];

@@ -67,6 +67,5 @@ class SlidingWindowRateLimiter:
                 )
 
 
-analyze_rate_limit = SlidingWindowRateLimiter(requests=12, window_seconds=60)
 download_rate_limit = SlidingWindowRateLimiter(requests=6, window_seconds=5 * 60)
 process_rate_limit = SlidingWindowRateLimiter(requests=6, window_seconds=5 * 60)

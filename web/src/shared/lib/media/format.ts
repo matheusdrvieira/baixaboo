@@ -11,7 +11,7 @@ const PRIVATE_IP_PATTERNS = [
   /^0\./,
 ];
 
-export interface UrlValidation {
+interface UrlValidation {
   valid: boolean;
   reason?:
     | "required"
@@ -26,9 +26,9 @@ export interface UrlValidation {
   hostname?: string;
 }
 
-export type DownloadUrlKind = "video" | "playlist";
+type DownloadUrlKind = "video" | "playlist";
 
-export type NormalizedDownloadUrl = {
+type NormalizedDownloadUrl = {
   kind: DownloadUrlKind;
   url: string;
 };
@@ -96,7 +96,7 @@ export function normalizeDownloadUrl(raw: string): NormalizedDownloadUrl | null 
   return null;
 }
 
-export function validateMediaUrl(raw: string): UrlValidation {
+function validateMediaUrl(raw: string): UrlValidation {
   const value = raw.trim();
   if (!value) return { valid: false, reason: "required" };
   let url: URL;
@@ -136,38 +136,4 @@ export function validateDownloadUrl(raw: string, expectedKind: DownloadUrlKind):
     return { ...validation, valid: false, reason: "playlistRequired" };
   }
   return validation;
-}
-
-export function formatBytes(bytes?: number): string {
-  if (!bytes || bytes <= 0) return "—";
-  const units = ["B", "KB", "MB", "GB"];
-  let value = bytes;
-  let i = 0;
-  while (value >= 1024 && i < units.length - 1) {
-    value /= 1024;
-    i += 1;
-  }
-  return `${value.toFixed(value >= 100 || i === 0 ? 0 : 1)} ${units[i]}`;
-}
-
-export function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
-}
-
-export function formatEta(seconds: number): string {
-  if (seconds < 60) return `~${Math.max(1, Math.round(seconds))}s`;
-  return `~${Math.round(seconds / 60)} min`;
-}
-
-export function formatDate(iso?: string, locale = "pt-BR"): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(iso));
-  } catch {
-    return "—";
-  }
 }

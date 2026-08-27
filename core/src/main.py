@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .dependencies import require_frontend_origin
 from .errors import ServiceError, service_error_handler
-from .routers import analyze, health, preparations, process
+from .routers import health, preparations, process
 from .services.preparations import preparation_manager
 from .services.converter import process_manager
 
@@ -54,7 +54,6 @@ def create_app() -> FastAPI:
 
     application.include_router(health.router)
     browser_only = [Depends(require_frontend_origin)]
-    application.include_router(analyze.router, dependencies=browser_only)
     application.include_router(preparations.router, dependencies=browser_only)
     application.include_router(process.router, dependencies=browser_only)
     return application

@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HOME=/app
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends aria2 ca-certificates chromium ffmpeg tini xvfb \
+    && apt-get install --yes --no-install-recommends ca-certificates ffmpeg tini \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 10001 baixaboo \
     && useradd --system --uid 1000 --gid baixaboo --home-dir /app baixaboo \
@@ -29,4 +29,4 @@ USER baixaboo
 
 ENTRYPOINT ["tini", "--"]
 
-CMD ["sh", "-c", "rm -f /tmp/.X99-lock /tmp/.X11-unix/X99 && Xvfb :99 -screen 0 1280x1024x24 -nolisten tcp -ac >/tmp/xvfb.log 2>&1 & exec env DISPLAY=:99 uvicorn src.main:app --host 0.0.0.0 --port 8010 --no-access-log --no-proxy-headers"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8010", "--no-access-log", "--no-proxy-headers"]
